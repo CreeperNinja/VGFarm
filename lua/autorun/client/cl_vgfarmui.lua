@@ -1,6 +1,4 @@
 
-crops = {"Carrots", "Potatos", "Cucumbers"}
-
 function ReturnNewUIElement(typeName, size, pos, title, isPopup, parent)
    element = vgui.Create(typeName, parent)
 
@@ -26,6 +24,9 @@ function ReturnNewDockedUIElement(typeName, dockType, margins, size, title, isPo
 
    elseif typeName == "DButton" then
       element:SetText(title)
+
+   elseif typeName == "BarredButton" then
+      element:SetCustomText(title)
    end
 
    element:Dock(dockType)
@@ -35,12 +36,6 @@ function ReturnNewDockedUIElement(typeName, dockType, margins, size, title, isPo
    if isPopup then element:MakePopup() end
 
    return element
-end
-
-function CreateInventoryLabels(parent)
-   buttonA = ReturnNewDockedUIElement("DLabel", TOP, {5, 0, 0, 0}, {50, 25}, "Carrots = 0", false , parent)
-   buttonB = ReturnNewDockedUIElement("DLabel", TOP, {5, 0, 0, 0}, {50, 25}, "Potatos = 0", false , parent)
-   buttonC = ReturnNewDockedUIElement("DLabel", TOP, {5, 0, 0, 0}, {50, 25}, "Cucumbers = 0", false , parent)
 end
 
 function CreateWindow()
@@ -63,35 +58,36 @@ function CreateWindow()
    mainUIFrame:MakePopup()
 
    local inventoryUIFrame = ReturnNewDockedUIElement("DFrame", LEFT, {0, 0, 0, 0}, {300, 0}, "Inventory", false , mainUIFrame)
-   CreateInventoryLabels(inventoryUIFrame)
+
+   local inventoryLabels = {}
+   // Create Label for each inventory item
+   for key, value in pairs(playerInventory) do
+      inventoryLabels[key] = ReturnNewDockedUIElement("DLabel", TOP, {5, 0, 0, 0}, {50, 25}, key.." = "..value or "None" , false , inventoryUIFrame)
+   end
 
    local barSpeed = 2
    local barStatus = 0
-   local sellAllButton = ReturnNewDockedUIElement("DButton", TOP, {5, 0, 0, 0}, {50, 25}, "", false , inventoryUIFrame)
-   sellAllButton.Paint = function(me, w, h)
-      if me:IsHovered() then
-         barStatus = math.Clamp(barStatus + barSpeed * FrameTime(), 0, 1)
-      else 
-         barStatus = math.Clamp(barStatus - barSpeed * FrameTime(), 0, 1)
-      end
 
-      rainbowColor =  HSVToColor(CurTime() * rainbowSpeed % 360, 1, 1)
-      surface.SetDrawColor(me:GetColor())
-      surface.DrawRect(0, 0, w, h)
-      surface.SetDrawColor(rainbowColor)
-      surface.DrawRect(0, h * 0.9, w * barStatus, h * 0.1)
-      draw.SimpleText("Sell All", "DermaDefault", w * 0.5, h * 0.25, color_white, TEXT_ALIGN_CENTER)
+   local sellAllButton = ReturnNewDockedUIElement("BarredButton", TOP, {5, 0, 0, 0}, {50, 25}, "Sell All", false , inventoryUIFrame)
+   sellAllButton:SetBarColor(Color(180, 180, 180, 255))
+   sellAllButton.DoClick = function()
+      SellAll()
+      for key, value in pairs(inventoryLabels) do
+         value:SetText(key.." = "..playerInventory[key])
+      end
    end
 
-   local testCustomButton = ReturnNewDockedUIElement("BarredButton", TOP, {5, 0, 0, 0}, {50, 25}, "", false , inventoryUIFrame)
-
    local graphUIFrame = ReturnNewDockedUIElement("DFrame", FILL, {5, 0, 0, 0}, {300, 0}, "Market", false , mainUIFrame)
-   local testMenu = ReturnNewDockedUIElement("DMenuBar", TOP, {5, 0, 0, 0}, {50, 25}, "Bar", false , graphUIFrame)
-   testMenu:AddMenu(crops[1])
-   testMenu:AddMenu(crops[2])
-   testMenu:AddMenu(crops[3])
 
-   local marketGraph = ReturnNewDockedUIElement("DPanel", FILL, {5, 0, 0, 0}, {300, 0}, "Market", false , graphUIFrame)
+   local cropsButtonsHolder = ReturnNewDockedUIElement("DPanel", TOP, {0, 0, 0, 0}, {50, 25}, "", false , graphUIFrame)
+   cropsButtonsHolder:SetPaintBackground(false)
+   
+   // Create Button for each crop
+   for key, value in pairs(playerInventory) do
+      ReturnNewDockedUIElement("BarredButton", LEFT, {5, 0, 0, 0}, {75, 25}, key, false , cropsButtonsHolder)
+   end
+
+   local marketGraph = ReturnNewDockedUIElement("DPanel", BOTTOM, {5, 0, 0, 0}, {300, 0}, "Market", false , graphUIFrame)
    marketGraph:SetPaintBackground(false)
 
    //Start Animating
@@ -105,7 +101,7 @@ function CreateWindow()
 end
 
 hook.Add( "PlayerButtonDown", "OpenFarmingMenu", function( ply, button )
-	if button != KEY_V then return end
+	if button != KEY_R then return end
 
 	if CLIENT and not IsFirstTimePredicted() then return end
 

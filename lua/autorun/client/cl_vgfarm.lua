@@ -25,9 +25,17 @@ itemLimitTable = itemLimitTable or
 //Temporary inventory for testing
 playerInventory = 
 {    
-    ["Pots"] = 0,
-    ["Gardens"] = 0,
-    ["Seeds"] = 0  
+    ["Carrots"] = 0,
+    ["Potatos"] = 0,
+    ["Cucumbers"] = 0,
+    ["Tomatoes"] = 0,
+    ["Lettuce"] = 0,
+    ["Onions"] = 0,
+    ["Beets"] = 0,
+    ["Spinach"] = 0,
+    ["Eggplant"] = 0,
+    ["Bell Peppers"] = 0
+
 }
 
 function ItemExists(itemName)
@@ -62,6 +70,7 @@ end
 
 //Returns the Amount of the Item the player can still buy
 function ReturnAllowedPurchaseAmount(itemName)
+    if !IsValid(itemLimitTable[itemName]) then print("No Purchase Limit For "..itemName) return 100 end
     if (itemLimitTable[itemName] <= playerInventory[itemName]) then print("Purchase Limit Reached for "..itemName.."("..itemLimitTable[itemName]..")") return 0 end
     return itemLimitTable[itemName] - playerInventory[itemName]
 end
@@ -91,12 +100,24 @@ function RemoveFromInventory(itemName, amount)
 
 end
 
+function SellAll()
+    earnings = 0
+    //if !IsValid(playerInventory) then print("No Inventory Set") return end
+    for key, value in pairs(playerInventory) do
+        playerInventory[key] = 0
+        earnings = earnings + value
+    end
+    if earnings == 0 then print("Nothing To Sell") return end
+    print("Sold All Inventory ($"..earnings..")")
+    return earnings
+end
+
 hook.Add( "PlayerButtonDown", "PurchaseSeeds", function( ply, button )
 	if button != KEY_T then return end
 
 	if CLIENT and not IsFirstTimePredicted() then return end
 
-    AddToInventory("Seeds", 5)
+    AddToInventory("Carrots", 5)
 
 end)
 
@@ -105,7 +126,7 @@ hook.Add( "PlayerButtonDown", "PurchasePots", function( ply, button )
 
 	if CLIENT and not IsFirstTimePredicted() then return end
 
-    AddToInventory("Pots", 1)
+    AddToInventory("Potatos", 1)
 end)
 
 hook.Add( "PlayerButtonDown", "RemoveSeeds", function( ply, button )
@@ -113,5 +134,5 @@ hook.Add( "PlayerButtonDown", "RemoveSeeds", function( ply, button )
 
 	if CLIENT and not IsFirstTimePredicted() then return end
 
-    RemoveFromInventory("Seeds", 1)
+    RemoveFromInventory("Carrots", 1)
 end)
