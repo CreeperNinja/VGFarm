@@ -8,7 +8,7 @@ local function SetLimitDataFromServer()
     itemLimitTable["Seeds"] = net.ReadInt(16)
 end
 
-net.Receive("SendLimitData", SetLimitDataFromServer)
+net.Receive("SendPlayerData", SetLimitDataFromServer)
 
 //Skill Level Of The Farming Job
 farmingLevel = 1
@@ -35,7 +35,6 @@ playerInventory =
     ["Spinach"] = 0,
     ["Eggplant"] = 0,
     ["Bell Peppers"] = 0
-
 }
 
 function ItemExists(itemName)
@@ -100,16 +99,25 @@ function RemoveFromInventory(itemName, amount)
 
 end
 
-function SellAll()
+function SellAllCrops()
     earnings = 0
     //if !IsValid(playerInventory) then print("No Inventory Set") return end
     for key, value in pairs(playerInventory) do
         playerInventory[key] = 0
-        earnings = earnings + value
+        earnings = earnings + value * markets[key][eachMarketSize]
     end
     if earnings == 0 then print("Nothing To Sell") return end
     print("Sold All Inventory ($"..earnings..")")
     return earnings
+end
+
+function SellAll(cropname)
+    local earnings = 0
+    earnings = earnings + playerInventory[cropname] * markets[cropname][eachMarketSize]
+    if earnings == 0 then print("No "..cropname.." To Sell") return end
+
+    playerInventory[cropname] = 0
+    print("Sold All "..cropname.."($"..earnings..")")
 end
 
 hook.Add( "PlayerButtonDown", "PurchaseSeeds", function( ply, button )

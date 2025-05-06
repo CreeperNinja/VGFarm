@@ -1,4 +1,45 @@
 
+-- 🅱️ Subtitle / Label Font
+surface.CreateFont("InventoryLabel", {
+   font = "Roboto",
+   size = 18,
+   weight = 500,
+   antialias = true
+})
+
+
+eachMarketSize = 0
+markets = { }
+
+net.Receive("SendMarketData", function()
+   local totalMarkets = net.ReadUInt(8)
+   eachMarketSize = net.ReadUInt(8)
+   local intBit = net.ReadUInt(6)
+   print("Recieving Market Data")
+   for i = 1, totalMarkets do
+      marketName = net.ReadString()
+      print("Market"..marketName)
+      markets[marketName] = {}
+      for g = 1, eachMarketSize do
+         markets[marketName][g] = net.ReadUInt(intBit)  -- or WriteInt, WriteBool, etc. depending on your data
+      end
+   end
+end)
+
+net.Receive("SendNewMarketDataValues", function()
+   local totalMarkets = net.ReadUInt(8)
+   local intBit = net.ReadUInt(6)
+   print("Started Receiving New Data")
+   for i = 1, totalMarkets do
+      local marketName = net.ReadString()
+      table.remove(markets[marketName],1)
+      local tableData = markets[marketName]
+      tableData[eachMarketSize] = net.ReadUInt(intBit)
+      print("Recieved new "..marketName.." values "..markets[marketName][eachMarketSize])
+   end
+end)
+
+
 function ReturnNewUIElement(typeName, size, pos, title, isPopup, parent)
    element = vgui.Create(typeName, parent)
 
@@ -27,6 +68,9 @@ function ReturnNewDockedUIElement(typeName, dockType, margins, size, title, isPo
 
    elseif typeName == "BarredButton" then
       element:SetCustomText(title)
+
+   elseif typeName == "MGraph" then
+      element:SetCustomText(title)
    end
 
    element:Dock(dockType)
@@ -42,7 +86,7 @@ function CreateWindow()
    -- Create two frames side by side
    local mainUIFrame = vgui.Create("DFrame")
 
-   local targetWidth, targetHeight = 1200, 800
+   local targetWidth, targetHeight = 1600, 800
    local screen_w, screen_h = ScrW(), ScrH()
    local x = screen_w / 2 - targetWidth / 2
    local y = screen_h / 2 - targetHeight / 2
@@ -52,7 +96,7 @@ function CreateWindow()
 
    local rainbowSpeed = 20
 
-   mainUIFrame:SetSize(0, 0)
+   mainUIFrame:SetSize(targetWidth, 0)
    mainUIFrame:SetPos(x, y)
    mainUIFrame:SetTitle("Farming")
    mainUIFrame:MakePopup()
@@ -62,7 +106,21 @@ function CreateWindow()
    local inventoryLabels = {}
    // Create Label for each inventory item
    for key, value in pairs(playerInventory) do
-      inventoryLabels[key] = ReturnNewDockedUIElement("DLabel", TOP, {5, 0, 0, 0}, {50, 25}, key.." = "..value or "None" , false , inventoryUIFrame)
+      inventoryItemFrame = ReturnNewDockedUIElement("DPanel", TOP, {5, 2, 5, 2}, {50, 50},"", false , inventoryUIFrame)
+      inventoryItemFrame.Paint = function(self, w, h)
+
+         local borderWidth = 5
+         // Border
+         draw.RoundedBox(5, 0, 0, w, h, Color(82, 82, 82, 150))
+
+         draw.RoundedBox(5, borderWidth, borderWidth, w - borderWidth*2, h - borderWidth*2, Color(82, 82, 82, 150))
+      end
+      inventoryLabels[key] = ReturnNewDockedUIElement("DLabel", LEFT, {5, 0, 0, 0}, {150, 25}, key.." = "..value or "None" , false , inventoryItemFrame)
+      inventoryLabels[key]:SetFont("InventoryLabel")
+      local sellButton = ReturnNewDockedUIElement("BarredButton", RIGHT, {5, 0, 10, 0}, {25, 25}, "Sell", false , inventoryItemFrame)
+      sellButton.DoClick = function()
+         SellAll(key)
+      end
    end
 
    local barSpeed = 2
@@ -70,8 +128,9 @@ function CreateWindow()
 
    local sellAllButton = ReturnNewDockedUIElement("BarredButton", TOP, {5, 0, 0, 0}, {50, 25}, "Sell All", false , inventoryUIFrame)
    sellAllButton:SetBarColor(Color(180, 180, 180, 255))
+   sellAllButton:SetBackgroundColor(Color(82, 82, 82, 150))
    sellAllButton.DoClick = function()
-      SellAll()
+      SellAllCrops()
       for key, value in pairs(inventoryLabels) do
          value:SetText(key.." = "..playerInventory[key])
       end
@@ -82,13 +141,26 @@ function CreateWindow()
    local cropsButtonsHolder = ReturnNewDockedUIElement("DPanel", TOP, {0, 0, 0, 0}, {50, 25}, "", false , graphUIFrame)
    cropsButtonsHolder:SetPaintBackground(false)
    
+   
+   local graphButtons = {}
+   local firstKey
    // Create Button for each crop
    for key, value in pairs(playerInventory) do
-      ReturnNewDockedUIElement("BarredButton", LEFT, {5, 0, 0, 0}, {75, 25}, key, false , cropsButtonsHolder)
+      if firstKey == nil then firstKey = key end
+      graphButtons[key] = ReturnNewDockedUIElement("BarredButton", LEFT, {5, 0, 0, 0}, {100, 25}, key, false , cropsButtonsHolder)
    end
 
-   local marketGraph = ReturnNewDockedUIElement("DPanel", BOTTOM, {5, 0, 0, 0}, {300, 0}, "Market", false , graphUIFrame)
-   marketGraph:SetPaintBackground(false)
+   // Sample market data
+   local marketGraph = ReturnNewDockedUIElement("MGraph", FILL, {5, 0, 0, 0}, {0, 0}, firstKey, false , graphUIFrame)
+   marketGraph:SetMarketData(markets[firstKey])
+
+   // Assign function for each tab in the graph
+   for key, value in pairs(graphButtons) do
+      value.DoClick = function()
+         marketGraph:SetCustomText(key)
+         marketGraph:SetMarketData(markets[key])
+      end
+   end
 
    //Start Animating
    mainUIFrame:SizeTo(targetWidth, targetHeight, animationTime, animationDelay, animationEase, function() isAnimating = false end)
