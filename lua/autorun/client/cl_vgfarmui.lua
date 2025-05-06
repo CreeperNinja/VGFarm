@@ -115,11 +115,14 @@ function CreateWindow()
 
          draw.RoundedBox(5, borderWidth, borderWidth, w - borderWidth*2, h - borderWidth*2, Color(82, 82, 82, 150))
       end
+      
       inventoryLabels[key] = ReturnNewDockedUIElement("DLabel", LEFT, {5, 0, 0, 0}, {150, 25}, key.." = "..value or "None" , false , inventoryItemFrame)
       inventoryLabels[key]:SetFont("InventoryLabel")
+
       local sellButton = ReturnNewDockedUIElement("BarredButton", RIGHT, {5, 0, 10, 0}, {25, 25}, "Sell", false , inventoryItemFrame)
       sellButton.DoClick = function()
          SellAll(key)
+         inventoryLabels[key]:SetText(key.." = "..playerInventory[key] or "None")
       end
    end
 
