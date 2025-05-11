@@ -22,12 +22,31 @@ surface.CreateFont("GraphMono", {
     antialias = true
 })
 
+//Localized Functions
+local max = math.max
+local floor = math.floor
+local unpack = unpack
+local Color = Color
+local SetDrawColor = surface.SetDrawColor
+local DrawLine = surface.DrawLine
+local DrawRect = surface.DrawRect
+local DrawSimpleText = draw.SimpleText
+local DrawRoundedBox = draw.RoundedBox
+
+local TEXT_ALIGN_TOP    = TEXT_ALIGN_TOP   
+local TEXT_ALIGN_BOTTOM = TEXT_ALIGN_BOTTOM
+local TEXT_ALIGN_LEFT   = TEXT_ALIGN_LEFT  
+local TEXT_ALIGN_RIGHT  = TEXT_ALIGN_RIGHT 
+local TEXT_ALIGN_CENTER = TEXT_ALIGN_CENTER
+
 local weekDays = 
 {
     "Today"
 }
 
 local PANEL = {}
+local marketDataCount
+local Color_White = Color(255, 255, 255, 255)
 
 function PANEL:Init()
     self:SetSize(100, 40)
@@ -43,7 +62,7 @@ function PANEL:Init()
     self.paddingBottom = 50
     self.paddingTop = 75
     self.paddingRight = 50
-    self.dotSize = 5
+    self.dotSize = 6
     //add or remove for this option
     self.gridEnabled = true 
 
@@ -52,17 +71,22 @@ function PANEL:Init()
     self.yOffset = 0
 
     // Colors
-    self.backgroundColor = Color(82, 82, 82, 255)
-    self.axiesColor =      Color(255, 255, 255, 255)
-    self.axiesBackgroundColor =      Color(164, 164, 164, 255)
+    self.backgroundColor = Color(80, 80, 80, 255)
+    self.axiesColor =      Color(255, 255, 255)
+    self.axiesBackgroundColor =      Color(100, 100, 100, 255)
     self.customTextColor = Color(255, 255, 255, 255)
-    self.axiesYTextColor = Color(255, 255, 255, 255)
-    self.axiesXTextColor = Color(255, 255, 255, 255)
+    self.axiesYTextColor = Color(255, 255, 255)
+    self.axiesXTextColor = Color(255, 255, 255)
+    self.valueColor = Color(0, 255, 0, 255)
+    self.valueDotColor = Color(100, 200, 255, 255) // or Color(100, 200, 255, 255)
+    self.valueLineColor = Color(200, 200, 200, 255)
+    marketDataCount = #self.marketData
 end
 
 function PANEL:Paint(w, h)  
 
     // Internal Data
+
     //Starting Point Of The Graph (From Bottom Left)
     local xAxies = self.paddingLeft
     local yAxies = h - self.paddingBottom
@@ -71,89 +95,90 @@ function PANEL:Paint(w, h)
     local graphAreaX = w - self.paddingLeft - self.paddingRight
     local graphAreaY = h - self.paddingBottom - self.paddingTop
 
-    local maxData = math.max(unpack(self.marketData))
+    local maxData = max(unpack(self.marketData))
 
     //Recommended to not change unless using different font sizes
     local constYOffset = 10
     local constXOffset = 10
 
     -- Background
-    surface.SetDrawColor(82, 82, 82, 82)
-    surface.DrawRect(0, 0, w, h)
+    SetDrawColor(self.backgroundColor)
+    DrawRect(0, 0, w, h)
 
     local scaledXOffset = self.xOffset / (w / graphAreaX)
 
     // Title Text
-    draw.SimpleText(self.customText, "GraphTitle", w * 0.5, self.paddingTop/1.5, self.customTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
+    DrawSimpleText(self.customText, "GraphTitle", w * 0.5, self.paddingTop/1.5, self.customTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
 
     -- Y Axis labels (e.g., 0%, 10%, ..., max)
     local segments = 9
     for i = 0, segments do
-        local value = math.floor(i / (segments) * maxData)
+        local value = floor(i / (segments) * maxData)
         local y = yAxies - (i) / (segments) * graphAreaY
-        draw.SimpleText("$"..value, "GraphAxies", self.paddingLeft * 0.75, y - constYOffset, Color(255,255,255,180), TEXT_ALIGN_RIGHT)
+        DrawSimpleText("$"..value, "GraphAxies", self.paddingLeft * 0.75, y - constYOffset, self.axiesYTextColor, TEXT_ALIGN_RIGHT)
 
         // Background Axies
-        surface.SetDrawColor(self.axiesBackgroundColor)
-        surface.DrawLine(xAxies, y, w, y)
+        SetDrawColor(self.axiesBackgroundColor)
+        DrawLine(xAxies, y, w, y)
 
         // Label Lines
-        surface.SetDrawColor(self.axiesColor)
-        surface.DrawLine(xAxies, y, xAxies - 10, y)
+        SetDrawColor(self.axiesColor)
+        DrawLine(xAxies, y, xAxies - 10, y)
     end
 
     //fill grid with vertical lines
-    for i = 1, w / graphAreaX * #self.marketData do
-        local x = xAxies + scaledXOffset + (graphAreaX / #self.marketData) * (i - 1) + self.dotSize/2
+    for i = 1, w / graphAreaX * marketDataCount do
+        local x = xAxies + scaledXOffset + (graphAreaX / marketDataCount) * (i - 1) + self.dotSize/2
 
         // Background Axies
-        surface.SetDrawColor(self.axiesBackgroundColor)
-        surface.DrawLine(x, yAxies, x, self.paddingTop)
-        
-
+        SetDrawColor(self.axiesBackgroundColor)
+        DrawLine(x, yAxies, x, self.paddingTop)
     end
 
+    //Draw X axies info
     local y = yAxies - (self.marketData[1] / maxData) * graphAreaY
     local nextX = xAxies + scaledXOffset
     local nextY = yAxies - (self.marketData[2] / maxData) * graphAreaY
     
-    surface.SetDrawColor(100, 200, 255, 255)
-    surface.DrawLine(xAxies, y - self.dotSize/4, nextX , nextY - self.dotSize/4)
+    -- Axies
+    SetDrawColor(self.axiesColor)
+    DrawLine(xAxies, yAxies, w , yAxies) -- X axis
+    DrawLine(xAxies, yAxies , xAxies, yAxies - graphAreaY)   -- Y axis
+    
+    SetDrawColor(self.valueLineColor)
+    DrawLine(xAxies, y - self.dotSize/4, nextX , nextY - self.dotSize/4)
 
     -- Draw points and thier values
-    for i = 2, #self.marketData do
-        local x = xAxies + scaledXOffset + (graphAreaX / #self.marketData) * (i - 2)
+    for i = 2, marketDataCount do
+        local x = xAxies + scaledXOffset + (graphAreaX / marketDataCount) * (i - 2)
         local y = yAxies - (self.marketData[i] / maxData) * graphAreaY
 
-        -- Draw data point
-        surface.DrawRect(x, y - self.dotSize/2, self.dotSize, self.dotSize)
-
         -- Draw line to next point
-        if i < #self.marketData then
-            local nextX = xAxies + scaledXOffset + (graphAreaX / #self.marketData) * (i-1)
+        SetDrawColor(self.valueLineColor)
+        if i < marketDataCount then
+            local nextX = xAxies + scaledXOffset + (graphAreaX / marketDataCount) * (i-1)
             local nextY = yAxies - (self.marketData[i+1] / maxData) * graphAreaY
-            surface.DrawLine(x + self.dotSize/2, y - self.dotSize/4, nextX + self.dotSize/2, nextY - self.dotSize/4)
+            DrawLine(x + self.dotSize/2, y - self.dotSize/4, nextX + self.dotSize/2, nextY - self.dotSize/4)
         end
+        
+        -- Draw data point
+        DrawRoundedBox(45, x, y - self.dotSize/2, self.dotSize, self.dotSize, self.valueDotColor)
 
         -- Label data point
-        draw.SimpleText("$"..self.marketData[i], "GraphMono", x, y - constYOffset, Color(255, 255, 0, 200), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+        DrawSimpleText("$"..self.marketData[i], "GraphMono", x, y - constYOffset, self.valueColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
     end
 
-    draw.SimpleText("Days Ago", "GraphAxies", xAxies + constXOffset, yAxies + constYOffset, Color(255, 255, 255, 180), TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+    DrawSimpleText("Days Ago", "GraphAxies", xAxies + constXOffset, yAxies + constYOffset, self.axiesXTextColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
 
     -- X axis labels (optional: e.g., time or index)
-    for i = 2, #self.marketData do
-        local x = xAxies + scaledXOffset + (graphAreaX / #self.marketData) * (i - 2) + self.dotSize/2
+    for i = 2, marketDataCount do
+        local x = xAxies + scaledXOffset + (graphAreaX / marketDataCount) * (i - 2) + self.dotSize/2
 
-        draw.SimpleText(weekDays[#self.marketData - i + 1] or (#self.marketData - i), "GraphAxies", x, yAxies + constYOffset, Color(255, 255, 255, 180), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+        DrawSimpleText(weekDays[marketDataCount - i + 1] or (marketDataCount - i), "GraphAxies", x, yAxies + constYOffset, self.axiesXTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
     end
 
     local x = xAxies + scaledXOffset + graphAreaX+ self.dotSize/2
 
-    -- Axies
-    surface.SetDrawColor(self.axiesColor)
-    surface.DrawLine(xAxies, yAxies, w , yAxies) -- X axis
-    surface.DrawLine(xAxies, yAxies , xAxies, yAxies - graphAreaY)   -- Y axis
 
 end
 
@@ -170,6 +195,7 @@ end
 
 function PANEL:SetMarketData(dataTable)
     self.marketData = dataTable
+    marketDataCount = #self.marketData
 end
 
 vgui.Register("MGraph", PANEL, "DPanel")

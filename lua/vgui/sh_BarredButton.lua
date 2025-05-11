@@ -1,9 +1,15 @@
 local PANEL = {}
 
+//Localized Functions
+local Clamp = math.Clamp
+local SetDrawColor = surface.SetDrawColor
+local DrawRect = surface.DrawRect
+local DrawSimpleText = draw.SimpleText
+
 -- 🔘 Button Text Font
 surface.CreateFont("BButtonText", {
     font = "Roboto",
-    size = 16,
+    size = 20,
     weight = 400,
     antialias = true
 })
@@ -23,21 +29,21 @@ function PANEL:Paint(w, h)
 
     // Change Status Bar Size Based On Hover State
     if self:IsHovered() then
-        self.barStatus = math.Clamp(self.barStatus + self.barSpeed * FrameTime(), 0, 1)
+        self.barStatus = Clamp(self.barStatus + self.barSpeed * FrameTime(), 0, 1)
     else 
-        self.barStatus = math.Clamp(self.barStatus - self.barSpeed * FrameTime(), 0, 1)
+        self.barStatus = Clamp(self.barStatus - self.barSpeed * FrameTime(), 0, 1)
     end
 
     // Draw background 
-    surface.SetDrawColor(self.backgroundColor[1], self.backgroundColor[2], self.backgroundColor[3], self.backgroundColor[4])
-    surface.DrawRect(0, 0, w, h)
+    SetDrawColor(self.backgroundColor[1], self.backgroundColor[2], self.backgroundColor[3], self.backgroundColor[4])
+    DrawRect(0, 0, w, h)
 
     // Draw bar
-    surface.SetDrawColor(self.barColor)
-    surface.DrawRect(0, h * 0.9, w * self.barStatus, h * 0.1)
+    SetDrawColor(self.barColor)
+    DrawRect(0, h * 0.9, w * self.barStatus, h * 0.1)
     
     // Draw text
-    draw.SimpleText(self.customText, "BButtonText", w * 0.5, h * 0.5, self.customTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    SimpleText(self.customText, "BButtonText", w * 0.5, h * 0.5, self.customTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
 // When the panel is ready for layout, set the background color to blue

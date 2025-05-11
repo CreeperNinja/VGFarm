@@ -1,5 +1,28 @@
-if CLIENT then
-	print( "myaddon Client Script Loaded!" )
+local VGFarm = include("sh_vgfarm.lua")
+
+VGFarmPlayer = VGFarmPlayer or {}
+
+//Current Limit of Items
+local itemLimitTable = itemLimitTable or 
+{  
+    ["Pots"] = 0,
+    ["Gardens"] = 0,
+    ["Seeds"] = 0  
+}
+
+//Temporary inventory for testing
+local playerInventory = {}
+
+local function SetInventoryInfo()
+    for cropName in pairs(VGFarm.CropMarkets) do
+        playerInventory[cropName] = 0
+    end
+end
+
+SetInventoryInfo()
+
+function VGFarmPlayer:GetPlayerFarmInventory()
+    return playerInventory
 end
 
 local function SetLimitDataFromServer()
@@ -10,41 +33,14 @@ end
 
 net.Receive("SendPlayerData", SetLimitDataFromServer)
 
-//Skill Level Of The Farming Job
-farmingLevel = 1
-
-
-//Current Limit of Items
-itemLimitTable = itemLimitTable or 
-{  
-    ["Pots"] = 0,
-    ["Gardens"] = 0,
-    ["Seeds"] = 0  
-}
-
-//Temporary inventory for testing
-playerInventory = 
-{    
-    ["Carrots"] = 0,
-    ["Potatos"] = 0,
-    ["Cucumbers"] = 0,
-    ["Tomatoes"] = 0,
-    ["Lettuce"] = 0,
-    ["Onions"] = 0,
-    ["Beets"] = 0,
-    ["Spinach"] = 0,
-    ["Eggplant"] = 0,
-    ["Bell Peppers"] = 0
-}
-
-function ItemExists(itemName)
+local function ItemExists(itemName)
     if type(itemName) ~= "string" then print("ItemExists: invalid or missing item name") return false end
     if playerInventory[itemName] != nil then return true end
     print(itemName.." Is Not A Valid Item")
     return false
 end
 
-function AddToInventory(itemName, amount)
+function VGFarmPlayer:AddToInventory(itemName, amount)
     //If item name is not in collection then exit
     if !ItemExists(itemName) then return end
 
@@ -62,25 +58,26 @@ function AddToInventory(itemName, amount)
 end
 
 //Returns the amount based on the limit and how much requested
-function ReturnFinalAmount(allowedLimit, amount)
+local function ReturnFinalAmount(allowedLimit, amount)
     if (allowedLimit < amount) then return allowedLimit end
     return amount
 end
 
 //Returns the Amount of the Item the player can still buy
-function ReturnAllowedPurchaseAmount(itemName)
+local function ReturnAllowedPurchaseAmount(itemName)
     if !IsValid(itemLimitTable[itemName]) then print("No Purchase Limit For "..itemName) return 100 end
     if (itemLimitTable[itemName] <= playerInventory[itemName]) then print("Purchase Limit Reached for "..itemName.."("..itemLimitTable[itemName]..")") return 0 end
     return itemLimitTable[itemName] - playerInventory[itemName]
 end
 
 //Returns the Amount of the Item the player can remove
-function ReturnAllowedRemoveAmount(itemName)
+local function ReturnAllowedRemoveAmount(itemName)
     if (playerInventory[itemName] <= 0) then print("Remove Limit Reached for "..itemName) return 0 end
     return playerInventory[itemName]
 end
 
-function RemoveFromInventory(itemName, amount)
+//Deprecated Or Not Recommended
+function VGFarmPlayer:RemoveFromInventory(itemName, amount)
     //If item name is not in collection then exit
     if !ItemExists(itemName) then return end
     
@@ -99,21 +96,23 @@ function RemoveFromInventory(itemName, amount)
 
 end
 
-function SellAllCrops()
+function VGFarmPlayer:SellAllCrops(markets)
     earnings = 0
     //if !IsValid(playerInventory) then print("No Inventory Set") return end
+
     for key, value in pairs(playerInventory) do
-        playerInventory[key] = 0
         earnings = earnings + value * markets[key][eachMarketSize]
+        playerInventory[key] = 0
     end
+
     if earnings == 0 then print("Nothing To Sell") return end
     print("Sold All Inventory ($"..earnings..")")
     return earnings
 end
 
-function SellAll(cropname)
+function VGFarmPlayer:SellAll(cropname, market)
     local earnings = 0
-    earnings = earnings + playerInventory[cropname] * markets[cropname][eachMarketSize]
+    earnings = earnings + playerInventory[cropname] * market[eachMarketSize]
     if earnings == 0 then print("No "..cropname.." To Sell") return end
 
     playerInventory[cropname] = 0
