@@ -1,0 +1,12 @@
+"LightmappedGeneric"
+{
+	"$basetexture" "spriteSheets/64_101/64_101_horizontal"
+	
+    "$translucent" "1"      // If using alpha
+    "$vertexalpha" "1"
+    "$vertexcolor" "1"
+
+    "$nocull" "1"           // Optional: double-sided rendering
+    "$clamps" "1"
+    "$clampt" "1"
+}

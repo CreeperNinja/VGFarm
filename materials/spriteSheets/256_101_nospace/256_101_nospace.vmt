@@ -1,0 +1,5 @@
+"UnlitGeneric"
+{
+	"$basetexture" "spriteSheets/256_101_nospace/256_101_nospace"
+	"$translucent" 1
+}

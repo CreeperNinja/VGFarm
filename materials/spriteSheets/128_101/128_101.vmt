@@ -1,0 +1,13 @@
+"UnlitGeneric"
+{
+	"$basetexture" "spriteSheets/128_101/128_101"	
+	"$frame" "0"
+
+    "$translucent" "1"      // If using alpha
+    "$vertexalpha" "1"
+    "$vertexcolor" "1"
+
+    "$nocull" "1"           // Optional: double-sided rendering
+    "$clamps" "1"
+    "$clampt" "1"
+}

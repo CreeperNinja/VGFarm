@@ -1,0 +1,8 @@
+"UnlitGeneric"
+{
+	"$basetexture" "circle/128px/128px"
+	"$translucent" "1"
+	"$nocull" "1"
+    "$clamps" "1"
+    "$clampt" "1"
+}
