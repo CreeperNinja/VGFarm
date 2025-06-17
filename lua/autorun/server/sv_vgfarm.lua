@@ -13,7 +13,7 @@ local Broadcast = net.Broadcast
 local intBit = 16
 
 // how freuquent the market updates are in seconds
-local marketUpdateFrequency = 5
+local marketUpdateFrequency = 60
 
 local eachMarketSize = VGFarm.EachMarketSize
 

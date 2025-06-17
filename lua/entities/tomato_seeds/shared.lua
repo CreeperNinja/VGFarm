@@ -10,19 +10,8 @@ ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 ENT.SeedAmount = 7 -- default amount
 ENT.xGrid = 7
 ENT.yGrid = 4
-ENT.MaxSeedAmount = ENT.xGrid * ENT.yGrid
-ENT.BlueGrid = 0
-ENT.GreenGrid = 0
-ENT.GrayGrid = 0
+ENT.MaxGridAmount = ENT.xGrid * ENT.yGrid
+ENT.MaxSeedAmount = ENT.MaxGridAmount * 2
 ENT.Model = "addons/VGFarm/models/seedPack2/seedPack2.mdl"
 ENT.yGridOffset = 50
 ENT.SeedIcon = Material("icons/seedPacks/tomatoIcon.png")
-
-function ENT:SetupDataTables()
-    self:NetworkVar("Int", 0, "SeedAmount")
-    self:NetworkVar("Int", 1, "MaxSeedAmount")
-    self:NetworkVar("Int", 2, "BlueGrid")
-    self:NetworkVar("Int", 3, "GreenGrid")
-    self:NetworkVar("Int", 4, "GrayGrid")
-end
-

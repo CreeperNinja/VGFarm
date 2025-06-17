@@ -8,22 +8,25 @@ ENT.Spawnable = true -- Specifies whether this Entity can be spawned by players 
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 ENT.Model = "addons/VGFarm/models/pot/pot.mdl"
-ENT.Soiled = false
-ENT.Watered = false
-ENT.DefaultWaterLevel = 0
+ENT.DefaultWaterLevel = 3
 ENT.MaxWaterLevel = 180
 ENT.frames = 100
-ENT.DefaultFrame = ENT.DefaultWaterLevel / ENT.MaxWaterLevel * ENT.frames
-ENT.WaterLevelMaterialPath = "spriteSheets/256_101_internal/256_101_internal"
+ENT.frame = math.ceil(ENT.DefaultWaterLevel / ENT.MaxWaterLevel * ENT.frames) - 1
+ENT.DefaultFrame = math.ceil(ENT.DefaultWaterLevel / ENT.MaxWaterLevel * ENT.frames) - 1
+ENT.Seeds = {}
+ENT.WaterLevelMaterial = Material("animatedtextures/circle_256px_100frames/circle_256px_100frames")
 
 function ENT:UpdateFrame(name, old, new) 
-    local frame = math.ceil(new / self.MaxWaterLevel * self.frames)
-    self.WaterLevelMaterial:SetInt("$frame", frame)
-    print("Frame: "..frame)
+    self.frame = math.ceil(new / self.MaxWaterLevel * self.frames) - 1
+    print("New Water Level: "..new.."   Set New Frame To "..self.frame)
+    self:UpdateDrawWaterDelegate()
 end
 
 function ENT:UpdateDraining(name, old, new) 
-    if old == 0 and new > 0 then table.insert(WaterDrainingEntities, 1, self) end
+    if #self.Seeds > 0 and old == 0 and new > 0 then 
+        table.insert(WaterDrainingEntities, 1, self) 
+        print("Added "..self:GetClass().." To Drain Update")
+    end
 end
 
 function ENT:SetupDataTables()

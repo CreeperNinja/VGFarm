@@ -2,6 +2,11 @@
 //Localized Function
 local random = math.random
 
+local VGFarm = {}
+
+//min 2, 1 for effect and another for value
+VGFarm.EachMarketSize = 20
+
 //Generates A table of values to be used for a market
 local function GenerateMarket(initialMin, initialMax)
     local market = {}
@@ -11,11 +16,6 @@ local function GenerateMarket(initialMin, initialMax)
     market[VGFarm.EachMarketSize] = random(initialMin, initialMax)
     return market
 end
-
-local VGFarm = {}
-
-//min 2, 1 for effect and another for value
-VGFarm.EachMarketSize = 20
 
 VGFarm.CropMarkets = 
 {    

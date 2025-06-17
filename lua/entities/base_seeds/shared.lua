@@ -7,22 +7,36 @@ ENT.Category = "VGFarm" -- The category for this Entity in the spawn menu.
 ENT.Spawnable = true -- Specifies whether this Entity can be spawned by players in the spawn menu.
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
-ENT.SeedAmount = 5 -- default amount
+ENT.DefaultSeedAmount = 5 -- default amount
 ENT.xGrid = 5
 ENT.yGrid = 4
-ENT.MaxSeedAmount = ENT.xGrid * ENT.yGrid
-ENT.BlueGrid = 0
-ENT.GreenGrid = 0
-ENT.GrayGrid = 0
+ENT.MaxGridAmount = ENT.xGrid * ENT.yGrid
+ENT.MaxSeedAmount = ENT.MaxGridAmount * 2
+ENT.FilledGrid = 0
+ENT.PartialGrid = 0
+ENT.EmptyGrid = 0
+ENT.GrowTime = 10
+ENT.CropClassName = "base_crop"
 ENT.Model = "addons/VGFarm/models/seedPack2/seedPack2.mdl"
 ENT.yGridOffset = 50
 ENT.SeedIcon = Material("icons/seedPacks/questionMarkIcon.png")
 
+local print = print
+local Clamp = math.Clamp
+local random = math.random
+
+function ENT:UpdateGrid(name, old, new)
+    print("Seed Amount Changed, Updating Grid")
+    if new <= 0 then print("Skipped Grid Update") return end
+    self:UpdateGridCache(new)
+end
+
 function ENT:SetupDataTables()
     self:NetworkVar("Int", 0, "SeedAmount")
-    self:NetworkVar("Int", 1, "MaxSeedAmount")
-    self:NetworkVar("Int", 2, "BlueGrid")
-    self:NetworkVar("Int", 3, "GreenGrid")
-    self:NetworkVar("Int", 4, "GrayGrid")
+
+    if CLIENT then
+        self:NetworkVarNotify("SeedAmount", self.UpdateGrid)
+    end
+
 end
 

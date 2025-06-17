@@ -1,0 +1,5 @@
+"VertexlitGeneric"
+{
+	"$basetexture" "sack/sack"
+	"$translucent" 1
+}

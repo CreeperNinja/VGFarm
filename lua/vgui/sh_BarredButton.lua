@@ -43,7 +43,7 @@ function PANEL:Paint(w, h)
     DrawRect(0, h * 0.9, w * self.barStatus, h * 0.1)
     
     // Draw text
-    SimpleText(self.customText, "BButtonText", w * 0.5, h * 0.5, self.customTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    DrawSimpleText(self.customText, "BButtonText", w * 0.5, h * 0.5, self.customTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
 // When the panel is ready for layout, set the background color to blue

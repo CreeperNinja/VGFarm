@@ -1,6 +1,5 @@
 include("shared.lua")
 
-
 local fadeStart = 50
 local maxDrawDistance = 300
 
@@ -14,20 +13,26 @@ local DrawTexture = surface.DrawTexturedRect
 local size = 16
 local xOffset = -size/2
 local yOffset = size/2
-local color = Color(255, 255, 255, alpha)
+local waterColor = Color(0, 80, 255, alpha)
+
+local function NoDraw(drawPos, drawAng) end
+
+function ENT:UpdateDrawWaterDelegate()
+    if self.frame >= 0 then
+        self.DrawWater = function(drawPos, drawAng)
+            render.SetMaterial(self.WaterLevelMaterial)
+            self.WaterLevelMaterial:SetInt("$frame", self.frame)
+            render.DrawQuadEasy(drawPos, drawAng, size, size, waterColor, 180)
+        end
+    else
+        self.DrawWater = NoDraw -- no-op
+        print("Removed Entity Water Level Rendering")
+    end
+end
 
 function ENT:Initialize()
-    self.WaterLevelMaterial = CreateMaterial("water_frame_" .. self:EntIndex(), "UnlitGeneric", {
-    ["$basetexture"] = self.WaterLevelMaterialPath,
-    ["$translucent"] = "1",
-    ["$vertexalpha"] = "1",
-    ["$vertexcolor"] = "1",
-    ["$frame"] = "0",
-    ["$nocull"] = "1",
-    ["$clamps"] = "1",
-    ["$clampt"] = "1"
-})
-
+    self:UpdateDrawWaterDelegate()
+    print("Default Frame: "..self.DefaultFrame)
     self.WaterLevelMaterial:SetInt("$frame", self.DefaultFrame)
 end
 
@@ -37,21 +42,20 @@ function ENT:DrawTranslucent()
     local ply = LocalPlayer()
     local pos = ply:GetPos()
     local dist = pos:Distance(self:GetPos())
-    if dist > maxDrawDistance then return end
+    -- if dist > maxDrawDistance then return end
     
-    // 
-    local alpha = 255
-    if dist > fadeStart then
-        local frac = Clamp((maxDrawDistance / dist) / (dist / fadeStart), 0, 1)
-        alpha = alpha * frac
-    end
+    -- local alpha = 255
+    -- if dist > fadeStart then
+    --     local frac = Clamp((maxDrawDistance / dist) / (dist / fadeStart), 0, 1)
+    --     alpha = alpha * frac
+    -- end
     -- GRID DRAWING (on side of model)
     
     local drawPos = self:GetPos() + self:GetUp() * 75 
     local toEye = EyePos() - drawPos
     local normal = toEye:GetNormalized()
-    render.SetMaterial(self.WaterLevelMaterial)
-    render.DrawQuadEasy(drawPos, normal, size, size, color, 180)
+
+    self.DrawWater(drawPos, normal)
 
 end
 

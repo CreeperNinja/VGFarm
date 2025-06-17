@@ -21,6 +21,27 @@ local DrawRect = surface.DrawRect
 local DrawMaterial = surface.SetMaterial
 local DrawTexture = surface.DrawTexturedRect
 
+function ENT:UpdateGridCache(seedCount)
+    local gridAmount = self.MaxGridAmount
+    //Calculate amount Exceeding the grid
+    local filled = Clamp(seedCount - gridAmount, 0, gridAmount)
+    self.FilledGrid = filled
+
+    //Calculate amount Filling the grid
+    local partial = Clamp(seedCount - filled, 0, gridAmount)
+    self.PartialGrid = partial
+
+    //Calculate amount Missing the grid
+    local empty = Clamp(gridAmount - partial - filled, 0, gridAmount)
+    self.EmptyGrid = empty
+
+    print("New Grid Cache: max: "..self.MaxGridAmount.."\r\n        Green: "..filled.."\r\n        Yellow: "..partial.." \r\n        Gray: "..empty)
+end
+
+function ENT:Initialize()
+    self:UpdateGridCache(self.DefaultSeedAmount)
+end
+
 function ENT:DrawTranslucent()
     self:DrawModel()
 
@@ -59,9 +80,11 @@ local gridStartPoint = size + spacing
 
 function ENT:DrawSeedGrid(pos, ang, alpha)
     local seedCount = self:GetSeedAmount()
-    local blue = self:GetBlueGrid()
-    local Green = self:GetGreenGrid()
-    local Gray = self:GetGrayGrid()
+    local filled = self.FilledGrid
+    local partial = self.PartialGrid
+    local empty = self.EmptyGrid
+
+    //print("Green: "..filled.."    Yellow: "..partial.."    Gray: "..empty)
 
     local rows = self.xGrid
     local cols = self.yGrid
@@ -70,19 +93,19 @@ function ENT:DrawSeedGrid(pos, ang, alpha)
 
     local gridIndex = 0
     DrawColor(0, 255, 0, alpha)
-    for i = 0, blue - 1 do
+    for i = 0, filled - 1 do
         DrawRect(gridStartPoint * (i % rows) + startX, gridStartPoint * (Floor((i)  / rows) % cols) + startY, size, size)
     end
 
     DrawColor(255, 255, 0, alpha)
-    gridIndex = blue
-    for i = gridIndex, Green - 1 do
+    gridIndex = filled
+    for i = gridIndex, partial - 1 do
         DrawRect(gridStartPoint * (i % rows) + startX, gridStartPoint * (Floor((i)  / rows) % cols) + startY, size, size)
     end
 
     DrawColor(100, 100, 100, alpha)
-    gridIndex = Green
-    for i = gridIndex, gridIndex + Gray - 1 do
+    gridIndex = partial
+    for i = gridIndex, gridIndex + empty - 1 do
         DrawRect(gridStartPoint * (i % rows) + startX, gridStartPoint * (Floor((i)  / rows) % cols) + startY, size, size)
     end
 end

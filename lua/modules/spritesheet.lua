@@ -4,7 +4,7 @@ SpriteSheet.__index = SpriteSheet
 
 function SpriteSheet:New(materialPath, frameSize, spacing, framesPerRow, totalFrames)
     local self = setmetatable({}, SpriteSheet)
-    self.mat = Material(materialPath)
+    self.spriteMaterial = Material(materialPath)
     self.frameSize = frameSize
     self.spacing = spacing
     self.framesPerRow = framesPerRow
@@ -15,17 +15,19 @@ function SpriteSheet:New(materialPath, frameSize, spacing, framesPerRow, totalFr
     return self
 end
 
-function SpriteSheet:NewHorizontal(materialPath, frameSize, spacing, totalFrames)
+function SpriteSheet:NewHorizontal(materialPath, totalFrames)
+    if(self.spriteMaterial:Width() == 4096) then
+        print("Size and Spacing Might Not Work WIth This Image Size")
+    end
+    
     local self = setmetatable({}, SpriteSheet)
-    self.mat = Material(materialPath)
-    self.frameSize = frameSize
+    self.spriteMaterial = Material(materialPath)
+    self.frameSize = self.spriteMaterial:Width() / totalFrames
     self.spacing = spacing
     self.totalFrames = totalFrames
     self.uvs = {}
-    self.frameSizeNormalized = self.frameSize / self.mat:Width()
-    self.spacingNormalized = self.spacing / self.mat:Height()
-    self.frameBottomNormalized = 1 - self.spacingNormalized
 
+    print("Frame Size: "..self.frameSize)
     print("Building UV's")
     self:BuildHorizontalUVs()
     
@@ -53,15 +55,13 @@ end
 //Creates an horizontal only UV map of the sprite with tables 1 indexed based table - assuming there is spacing from borders
 function SpriteSheet:BuildHorizontalUVs()
 
-    local matWidth = self.mat:Width()
-    print("Material Width is: "..matWidth)
-    local frame = self.frameSize + self.spacing
-    for i = 0, self.totalFrames - 1 do
+    -- local frame = self.frameSizeNormalized + self.spacingWidthNormalized
+    -- for i = 0, self.totalFrames - 1 do
 
-        local x = i * frame / matWidth 
-        self.uvs[i+1] = {x, self.spacingNormalized}
-        print(x)
-    end
+    --     local x = i * frame / self.spriteMaterial:Width() 
+    --     self.uvs[i+1] = {x, self.spacingNormalized}
+    --     print(x)
+    -- end
 end
 
 function SpriteSheet:GetUV(index)
@@ -69,7 +69,8 @@ function SpriteSheet:GetUV(index)
 end
 
 function SpriteSheet:DrawFrame(index, x, y, w, h, color)
-    surface.SetMaterial(self.mat)
+    local spriteMaterial = self.spriteMaterial
+    surface.SetMaterial(spriteMaterial)
     surface.SetDrawColor(color or color_white)
 
     local xUV, yUV= self:GetUV(index)

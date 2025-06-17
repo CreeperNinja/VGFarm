@@ -211,10 +211,7 @@ local function CreateWindow()
 end
 
 //Hooks
-hook.Add( "PlayerButtonDown", "OpenFarmingMenu", function( ply, button )
+hook.Add("PlayerButtonDown", "OpenFarmingMenu", function( ply, button )
 	if button != KEY_R then return end
-
-	if CLIENT and not IsFirstTimePredicted() then return end
-
    CreateWindow()
 end)
