@@ -8,12 +8,13 @@ ENT.Spawnable = true -- Specifies whether this Entity can be spawned by players 
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 ENT.Model = "addons/VGFarm/models/pot/pot.mdl"
-ENT.DefaultWaterLevel = 3
+ENT.DefaultWaterLevel = 180
 ENT.MaxWaterLevel = 180
 ENT.frames = 100
 ENT.frame = math.ceil(ENT.DefaultWaterLevel / ENT.MaxWaterLevel * ENT.frames) - 1
 ENT.DefaultFrame = math.ceil(ENT.DefaultWaterLevel / ENT.MaxWaterLevel * ENT.frames) - 1
 ENT.Seeds = {}
+ENT.IsFertelized = true  
 ENT.WaterLevelMaterial = Material("animatedtextures/circle_256px_100frames/circle_256px_100frames")
 
 function ENT:UpdateFrame(name, old, new) 

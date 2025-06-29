@@ -15,7 +15,9 @@ local xOffset = -size/2
 local yOffset = size/2
 local frame = 0
 
+local modelColor = Color(0, 0, 255, 255)
 
 function ENT:DrawTranslucent()
+    self:SetColor(modelColor)
     self:DrawModel()
 end

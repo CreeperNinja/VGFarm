@@ -24,11 +24,15 @@ local drainSpeed = 1
 local drainAmount = 1
 
 function ENT:SpawnCrop(entClass)
-    local crop = ents.Create(entClass.CropClassName)
-    print("Spawning Crop")
+    local crop = ents.Create("base_crop")
+    crop.CropHolder = entClass.CropClassName 
+    crop.CropAmount = entClass:GetRandomCropAmount(self.IsFertelized)
+    print("Spawning "..crop.CropAmount.." "..entClass.CropClassName)
     crop:SetPos(self:GetPos() + self:GetRight() + self:GetUp() * 30)
     crop:Spawn()
     crop:Activate()
+    if self.IsFertelized then print("Was Fertelized") return end
+    print("Was Not Fertelized")
 end
 
 function ENT:CanAddSeeds()
@@ -53,8 +57,8 @@ function ENT:GrowSeeds(tableIndex)
     //If seed has reached full growth, remove it from pot, draining cycle, and spawn crop
     if self.Seeds[1][2] >= ent.GrowTime then 
         print(self.Seeds[1][1].." Finished Growing")
-        self.Seeds[1] = nil
         self:SpawnCrop(ent)
+        self.Seeds[1] = nil
         if tableIndex > 0 then
             table.remove(WaterDrainingEntities, tableIndex)
         end

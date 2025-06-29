@@ -2,144 +2,76 @@ local VGFarm = include("sh_vgfarm.lua")
 
 VGFarmPlayer = VGFarmPlayer or {}
 
-//Current Limit of Items
-local itemLimitTable = itemLimitTable or 
-{  
-    ["Pots"] = 0,
-    ["Gardens"] = 0,
-    ["Seeds"] = 0  
-}
+//Client Side Inventory For Visuals
+VGFarmPlayer.Inventory = {}
 
-//Temporary inventory for testing
-local playerInventory = {}
+//Sets each crop amount in inventory to 0
+for key, crop in ipairs(VGFarm.Crops) do
+    VGFarmPlayer.Inventory[crop.name] = 0
+end
 
-local function SetInventoryInfo()
-    for cropName in pairs(VGFarm.CropMarkets) do
-        playerInventory[cropName] = 0
+function VGFarmPlayer:GetPlayerFarmInventory()
+    return self.Inventory
+end
+
+local function SetPlayerData()
+    local count = net.ReadUInt(4)
+
+    for i = 1, count do
+        local cropName = VGFarm.CropTypes[net.ReadUInt(4)]
+        VGFarmPlayer.Inventory[cropName] = 0
     end
 end
 
-SetInventoryInfo()
-
-function VGFarmPlayer:GetPlayerFarmInventory()
-    return playerInventory
+local function ResetInventory()
+    for cropName in pairs(VGFarmPlayer.Inventory) do
+        VGFarmPlayer.Inventory[cropName] = 0
+    end
 end
 
-local function SetLimitDataFromServer()
-    itemLimitTable["Pots"] = net.ReadInt(16)
-    itemLimitTable["Gardens"] = net.ReadInt(16)
-    itemLimitTable["Seeds"] = net.ReadInt(16)
+local function ResetCropInInventory()
+    local cropName = VGFarm.SmartNetCropRead()
+    VGFarmPlayer.Inventory[cropName] = 0
 end
 
-net.Receive("SendPlayerData", SetLimitDataFromServer)
-
-local function ItemExists(itemName)
-    if type(itemName) ~= "string" then print("ItemExists: invalid or missing item name") return false end
-    if playerInventory[itemName] != nil then return true end
-    print(itemName.." Is Not A Valid Item")
-    return false
+local function SetCropAmount()
+    local cropName = VGFarm.Crops[net.ReadUInt(VGFarm.CropBitEncoder)].name
+    local smartBit = VGFarmUtils.SmartNetBitRead()
+    local cropAmount = net.ReadUInt(smartBit)
+    VGFarmPlayer.Inventory[cropName] = cropAmount
+    --print("Player Now Has "..cropAmount.." "..cropName.." (Client Side)    Used Bits: "..smartBit.." + 3 + 4 = "..smartBit + 3 + 4 .." Total")
 end
 
-function VGFarmPlayer:AddToInventory(itemName, amount)
-    //If item name is not in collection then exit
-    if !ItemExists(itemName) then return end
+net.Receive("ResetPlayerInventory", ResetInventory)
 
-    local allowedLimit = ReturnAllowedPurchaseAmount(itemName)
-    
-    //If  allowed purchace amount is 0 (or less) then exit
-    if(allowedLimit <= 0) then return end
+net.Receive("ResetCropInPlayerInventory", ResetCropInInventory)
 
-    amountToAdd = ReturnFinalAmount(allowedLimit, amount)
+net.Receive("SendPlayerInventoryCrop", SetCropAmount)
 
-    playerInventory[itemName] = playerInventory[itemName] + amountToAdd
+net.Receive("SendPlayerData", SetPlayerData)
 
-    print("Added "..amountToAdd.." "..itemName)
-
+function VGFarmPlayer:SendSellCropRequest(cropName)
+    net.Start("RequestSellCrop")
+    print("Attempting to send Crop "..cropName)
+    VGFarm.SmartNetCropWrite(cropName)
+    net.SendToServer()
 end
 
-//Returns the amount based on the limit and how much requested
+//Returns the amount based on the limit and how much requested -- Deprecated
 local function ReturnFinalAmount(allowedLimit, amount)
     if (allowedLimit < amount) then return allowedLimit end
     return amount
 end
 
-//Returns the Amount of the Item the player can still buy
+//Returns the Amount of the Item the player can still buy -- Deprecated
 local function ReturnAllowedPurchaseAmount(itemName)
     if !IsValid(itemLimitTable[itemName]) then print("No Purchase Limit For "..itemName) return 100 end
-    if (itemLimitTable[itemName] <= playerInventory[itemName]) then print("Purchase Limit Reached for "..itemName.."("..itemLimitTable[itemName]..")") return 0 end
-    return itemLimitTable[itemName] - playerInventory[itemName]
+    if (itemLimitTable[itemName] <= Inventory[itemName]) then print("Purchase Limit Reached for "..itemName.."("..itemLimitTable[itemName]..")") return 0 end
+    return itemLimitTable[itemName] - Inventory[itemName]
 end
 
-//Returns the Amount of the Item the player can remove
+//Returns the Amount of the Item the player can remove -- Deprecated
 local function ReturnAllowedRemoveAmount(itemName)
-    if (playerInventory[itemName] <= 0) then print("Remove Limit Reached for "..itemName) return 0 end
-    return playerInventory[itemName]
+    if (Inventory[itemName] <= 0) then print("Remove Limit Reached for "..itemName) return 0 end
+    return Inventory[itemName]
 end
-
-//Deprecated Or Not Recommended
-function VGFarmPlayer:RemoveFromInventory(itemName, amount)
-    //If item name is not in collection then exit
-    if !ItemExists(itemName) then return end
-    
-    local allowedLimit = ReturnAllowedRemoveAmount(itemName)
-    
-    //If allowed remove amount is 0 (or less) then exit
-    if(allowedLimit <= 0) then return end
-
-    amountToRemove = ReturnFinalAmount(allowedLimit, amount)
-
-    playerInventory[itemName] = playerInventory[itemName] - amountToRemove
-
-    print("Removed "..amountToRemove.." "..itemName)
-    
-    hook.Call("OnPlayerRemovedItem", GAMEMODE, ply, itemName, amountToRemove)
-
-end
-
-function VGFarmPlayer:SellAllCrops(markets)
-    earnings = 0
-    //if !IsValid(playerInventory) then print("No Inventory Set") return end
-
-    for key, value in pairs(playerInventory) do
-        earnings = earnings + value * markets[key][eachMarketSize]
-        playerInventory[key] = 0
-    end
-
-    if earnings == 0 then print("Nothing To Sell") return end
-    print("Sold All Inventory ($"..earnings..")")
-    return earnings
-end
-
-function VGFarmPlayer:SellAll(cropname, market)
-    local earnings = 0
-    earnings = earnings + playerInventory[cropname] * market[eachMarketSize]
-    if earnings == 0 then print("No "..cropname.." To Sell") return end
-
-    playerInventory[cropname] = 0
-    print("Sold All "..cropname.."($"..earnings..")")
-end
-
-hook.Add( "PlayerButtonDown", "PurchaseSeeds", function( ply, button )
-	if button != KEY_T then return end
-
-	if CLIENT and not IsFirstTimePredicted() then return end
-
-    AddToInventory("Carrots", 5)
-
-end)
-
-hook.Add( "PlayerButtonDown", "PurchasePots", function( ply, button )
-	if button != KEY_O then return end
-
-	if CLIENT and not IsFirstTimePredicted() then return end
-
-    AddToInventory("Potatos", 1)
-end)
-
-hook.Add( "PlayerButtonDown", "RemoveSeeds", function( ply, button )
-	if button != KEY_H then return end
-
-	if CLIENT and not IsFirstTimePredicted() then return end
-
-    RemoveFromInventory("Carrots", 1)
-end)

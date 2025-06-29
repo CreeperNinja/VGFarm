@@ -8,3 +8,5 @@ ENT.Spawnable = true -- Specifies whether this Entity can be spawned by players 
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 ENT.Model = "addons/VGFarm/models/sack/sack.mdl"
+ENT.CropHolder = nil 
+ENT.CropAmount = 0

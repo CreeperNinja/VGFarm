@@ -1,6 +1,7 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 include("shared.lua")
+local SVGFarm = include("autorun/server/sv_vgfarm.lua")
 
 -- This will be called on both the Client and Server realms
 function ENT:Initialize()
@@ -13,5 +14,15 @@ function ENT:Initialize()
     if phys:IsValid() then -- Checks if the physics object is valid.
         phys:Wake() -- Activates the physics object, making the Entity subject to physics (gravity, collisions, etc.).
     end
+    self:SetUseType(SIMPLE_USE) -- or CONTINUOUS_USE if needed
     print("Spawned Crop Entity")
+end
+
+function ENT:Use(activator, caller)
+    if not IsValid(activator) or not activator:IsPlayer() then return end
+
+    print(activator:Nick() .. " used the entity!")
+    -- Do something, e.g., open UI, pick up, etc.
+    SVGFarm:AddCropToInventory(activator, self.CropHolder, self.CropAmount)
+    self:Remove()
 end

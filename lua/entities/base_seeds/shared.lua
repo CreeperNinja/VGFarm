@@ -17,6 +17,8 @@ ENT.PartialGrid = 0
 ENT.EmptyGrid = 0
 ENT.GrowTime = 10
 ENT.CropClassName = "base_crop"
+ENT.CropMinAmount = 1
+ENT.CropMaxAmount = 2
 ENT.Model = "addons/VGFarm/models/seedPack2/seedPack2.mdl"
 ENT.yGridOffset = 50
 ENT.SeedIcon = Material("icons/seedPacks/questionMarkIcon.png")
@@ -38,5 +40,14 @@ function ENT:SetupDataTables()
         self:NetworkVarNotify("SeedAmount", self.UpdateGrid)
     end
 
+end
+
+function ENT:PrintTest()
+    print(self.CropClassName.." Seeds with min and max "..self.CropMinAmount.." "..self.CropMaxAmount)
+end
+
+function ENT:GetRandomCropAmount(IsFertelized)
+    if IsFertelized and self.CropMinAmount + 1 <= self.CropMaxAmount then return math.random(self.CropMinAmount + 1, self.CropMaxAmount) end
+    return math.random(self.CropMinAmount, self.CropMaxAmount)
 end
 

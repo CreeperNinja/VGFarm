@@ -14,7 +14,7 @@ surface.CreateFont("GraphAxies", {
     antialias = true
 })
 
--- 💻 Monospace Font (great for numbers or aligned values)
+-- 💻 Monospace Font
 surface.CreateFont("GraphMono", {
     font = "Roboto",
     size = 18,
@@ -45,7 +45,6 @@ local weekDays =
 }
 
 local PANEL = {}
-local marketDataCount
 local Color_White = Color(255, 255, 255, 255)
 
 function PANEL:Init()
@@ -56,13 +55,20 @@ function PANEL:Init()
     
     // Data
     self.marketData = {}
+    self.maxData = nil 
+    self.minMarketValue = 0
+    self.maxMarketValue = nil 
+    self.marketDataCount = #self.marketData
 
     // Settings
     self.paddingLeft = 75
     self.paddingBottom = 50
     self.paddingTop = 75
-    self.paddingRight = 50
+    self.paddingRight = -25
     self.dotSize = 6
+
+    self.ySegments = 10
+
     //add or remove for this option
     self.gridEnabled = true 
 
@@ -80,7 +86,16 @@ function PANEL:Init()
     self.valueColor = Color(0, 255, 0, 255)
     self.valueDotColor = Color(100, 200, 255, 255) // or Color(100, 200, 255, 255)
     self.valueLineColor = Color(200, 200, 200, 255)
-    marketDataCount = #self.marketData
+
+    -- Internal Data
+
+    self.xPadding = self.paddingLeft + self.paddingRight
+    self.yPadding = self.paddingBottom + self.paddingTop
+
+    //Recommended to not change unless using a different font size
+    self.constYOffset = 10
+    self.constXOffset = 10
+
 end
 
 function PANEL:Paint(w, h)  
@@ -92,14 +107,8 @@ function PANEL:Paint(w, h)
     local yAxies = h - self.paddingBottom
     
     //Area of drawn graph
-    local graphAreaX = w - self.paddingLeft - self.paddingRight
-    local graphAreaY = h - self.paddingBottom - self.paddingTop
-
-    local maxData = max(unpack(self.marketData))
-
-    //Recommended to not change unless using different font sizes
-    local constYOffset = 10
-    local constXOffset = 10
+    local graphAreaX = w - self.xPadding
+    local graphAreaY = h - self.yPadding
 
     -- Background
     SetDrawColor(self.backgroundColor)
@@ -111,11 +120,10 @@ function PANEL:Paint(w, h)
     DrawSimpleText(self.customText, "GraphTitle", w * 0.5, self.paddingTop/1.5, self.customTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
 
     -- Y Axis labels (e.g., 0%, 10%, ..., max)
-    local segments = 9
-    for i = 0, segments do
-        local value = floor(i / (segments) * maxData)
-        local y = yAxies - (i) / (segments) * graphAreaY
-        DrawSimpleText("$"..value, "GraphAxies", self.paddingLeft * 0.75, y - constYOffset, self.axiesYTextColor, TEXT_ALIGN_RIGHT)
+    for i = 0, self.ySegments do
+        local value = floor(i / (self.ySegments) * self.maxData * 10) / 10
+        local y = yAxies - (i) / (self.ySegments) * graphAreaY
+        DrawSimpleText("$"..value, "GraphAxies", self.paddingLeft * 0.75, y - self.constYOffset, self.axiesYTextColor, TEXT_ALIGN_RIGHT)
 
         // Background Axies
         SetDrawColor(self.axiesBackgroundColor)
@@ -127,8 +135,8 @@ function PANEL:Paint(w, h)
     end
 
     //fill grid with vertical lines
-    for i = 1, w / graphAreaX * marketDataCount do
-        local x = xAxies + scaledXOffset + (graphAreaX / marketDataCount) * (i - 1) + self.dotSize/2
+    for i = 1, w / graphAreaX * self.marketDataCount do
+        local x = xAxies + scaledXOffset + (graphAreaX / self.marketDataCount) * (i - 1) + self.dotSize/2
 
         // Background Axies
         SetDrawColor(self.axiesBackgroundColor)
@@ -136,9 +144,9 @@ function PANEL:Paint(w, h)
     end
 
     //Draw X axies info
-    local y = yAxies - (self.marketData[1] / maxData) * graphAreaY
+    local y = yAxies - (self.marketData[1] / self.maxData) * graphAreaY
     local nextX = xAxies + scaledXOffset
-    local nextY = yAxies - (self.marketData[2] / maxData) * graphAreaY
+    local nextY = yAxies - (self.marketData[2] / self.maxData) * graphAreaY
     
     -- Axies
     SetDrawColor(self.axiesColor)
@@ -149,15 +157,15 @@ function PANEL:Paint(w, h)
     DrawLine(xAxies, y - self.dotSize/4, nextX , nextY - self.dotSize/4)
 
     -- Draw points and thier values
-    for i = 2, marketDataCount do
-        local x = xAxies + scaledXOffset + (graphAreaX / marketDataCount) * (i - 2)
-        local y = yAxies - (self.marketData[i] / maxData) * graphAreaY
+    for i = 2, self.marketDataCount do
+        local x = xAxies + scaledXOffset + (graphAreaX / self.marketDataCount) * (i - 2)
+        local y = yAxies - (self.marketData[i] / self.maxData) * graphAreaY
 
         -- Draw line to next point
         SetDrawColor(self.valueLineColor)
-        if i < marketDataCount then
-            local nextX = xAxies + scaledXOffset + (graphAreaX / marketDataCount) * (i-1)
-            local nextY = yAxies - (self.marketData[i+1] / maxData) * graphAreaY
+        if i < self.marketDataCount then
+            local nextX = xAxies + scaledXOffset + (graphAreaX / self.marketDataCount) * (i-1)
+            local nextY = yAxies - (self.marketData[i+1] / self.maxData) * graphAreaY
             DrawLine(x + self.dotSize/2, y - self.dotSize/4, nextX + self.dotSize/2, nextY - self.dotSize/4)
         end
         
@@ -165,16 +173,16 @@ function PANEL:Paint(w, h)
         DrawRoundedBox(45, x, y - self.dotSize/2, self.dotSize, self.dotSize, self.valueDotColor)
 
         -- Label data point
-        DrawSimpleText("$"..self.marketData[i], "GraphMono", x, y - constYOffset, self.valueColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+        DrawSimpleText("$"..self.marketData[i], "GraphMono", x, y - self.constYOffset, self.valueColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
     end
 
-    DrawSimpleText("Days Ago", "GraphAxies", xAxies + constXOffset, yAxies + constYOffset, self.axiesXTextColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+    DrawSimpleText("Days Ago", "GraphAxies", xAxies + self.constXOffset, yAxies + self.constYOffset, self.axiesXTextColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
 
     -- X axis labels (optional: e.g., time or index)
-    for i = 2, marketDataCount do
-        local x = xAxies + scaledXOffset + (graphAreaX / marketDataCount) * (i - 2) + self.dotSize/2
+    for i = 2, self.marketDataCount do
+        local x = xAxies + scaledXOffset + (graphAreaX / self.marketDataCount) * (i - 2) + self.dotSize/2
 
-        DrawSimpleText(weekDays[marketDataCount - i + 1] or (marketDataCount - i), "GraphAxies", x, yAxies + constYOffset, self.axiesXTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+        DrawSimpleText(weekDays[self.marketDataCount - i + 1] or (self.marketDataCount - i), "GraphAxies", x, yAxies + self.constYOffset, self.axiesXTextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
     end
 
     local x = xAxies + scaledXOffset + graphAreaX+ self.dotSize/2
@@ -195,7 +203,20 @@ end
 
 function PANEL:SetMarketData(dataTable)
     self.marketData = dataTable
-    marketDataCount = #self.marketData
+    self.marketDataCount = #self.marketData
+
+    self:SetMaxMarketValue(self.maxMarketValue)
+end
+
+function PANEL:SetMaxMarketValue(maxNum)
+    self.maxMarketValue = maxNum
+    --Switches Y Axis Value Modes: Free Market Range / Set Market Range
+    if self.maxMarketValue == nil or self.maxMarketValue == 0 then
+        self.maxData = max(unpack(self.marketData))
+    else
+        self.maxData = self.maxMarketValue
+    end
+
 end
 
 vgui.Register("MGraph", PANEL, "DPanel")

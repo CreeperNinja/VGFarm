@@ -34,27 +34,20 @@ local backgroundColor = Color(80, 80, 80, 255)
 
 //Network Massages
 net.Receive("SendMarketData", function()
-   local intBit = ReadUInt(6)
-   print("Recieving Market Data")
    for i = 1, totalMarkets do
-      marketName = net.ReadString()
+      marketName = VGFarm.SmartNetCropRead()
       markets[marketName] = {}
       for g = 1, eachMarketSize do
-         markets[marketName][g] = ReadUInt(intBit)  -- or WriteInt, WriteBool, etc. depending on your data
+         markets[marketName][g] = VGFarmUtils.SmartNetFloatToIntRead()
       end
-      print("Market "..marketName.." | With last Value = "..markets[marketName][eachMarketSize])
    end
 end)
 
 net.Receive("SendNewMarketDataValues", function()
-   local intBit = ReadUInt(6)
-   print("Started Receiving New Data")
    for i = 1, totalMarkets do
-      local marketName = net.ReadString()
+      local marketName = VGFarm.SmartNetCropRead()
       table.remove(markets[marketName],1)
-      local tableData = markets[marketName]
-      tableData[eachMarketSize] = ReadUInt(intBit)
-      print("Recieved new "..marketName.." value "..markets[marketName][eachMarketSize])
+      markets[marketName][eachMarketSize] = VGFarmUtils.SmartNetFloatToIntRead()
    end
 end)
 
@@ -107,7 +100,7 @@ local function CreateInventoryUI(parent, playerInv)
    local Labels = {}
 
    //Create Label for each inventory item
-   for key, value in pairs(playerInv) do
+   for key, crop in pairs(VGFarm.Crops) do
 
       //Create Background
       inventoryItemFrame = ReturnNewDockedUIElement("DPanel", TOP, {0, 2, 0, 2}, {50, 50},"", false , parent)
@@ -121,15 +114,15 @@ local function CreateInventoryUI(parent, playerInv)
       end
       
       //Create Text
-      Labels[key] = ReturnNewDockedUIElement("DLabel", LEFT, {5, 0, 0, 0}, {150, 25}, key.." = "..value or "None" , false , inventoryItemFrame)
+      Labels[key] = ReturnNewDockedUIElement("DLabel", LEFT, {5, 0, 0, 0}, {150, 25}, crop.name.." = "..playerInv[crop.name] or "None" , false , inventoryItemFrame)
       Labels[key]:SetFont("InventoryLabel")
 
       //Create Sell Button
       local sellButton = ReturnNewDockedUIElement("BarredButton", RIGHT, {5, 5, 5, 5}, {50, 25}, "Sell", false , inventoryItemFrame)
       //sellButton:SetBackgroundColor(Color(165, 165, 165, 150))
       sellButton.DoClick = function()
-         SellAll(key, markets[key])
-         Labels[key]:SetText(key.." = "..playerInv[key] or "None")
+         VGFarmPlayer:SendSellCropRequest(crop.name)
+         Labels[key]:SetText(key.." = "..0 or "None")
       end
    end
 
@@ -148,6 +141,7 @@ local function CreateWindow()
 
    //Data
    local playerInv = VGFarmPlayer:GetPlayerFarmInventory()
+   print("Player Inventory Count: "..#playerInv)
 
    //Creates A main Window Frame
    local mainUIFrame = vgui.Create("DFrame")
@@ -178,25 +172,31 @@ local function CreateWindow()
    local cropsButtonsHolder = ReturnNewDockedUIElement("DPanel", TOP, {0, 0, 0, 0}, {50, 25}, "", false , graphUIFrame)
    cropsButtonsHolder:SetPaintBackground(false)
    
-   local firstKey
+   local firstCrop = nil 
    local graphButtons = {}
 
    //Create Button for each crop type
-   for key, value in pairs(playerInv) do
-      if firstKey == nil then firstKey = key end
-      graphButtons[key] = ReturnNewDockedUIElement("BarredButton", LEFT, {0, 0, 0, 0}, {100, 25}, key, false , cropsButtonsHolder)
+   for key, crop in pairs(VGFarm.Crops) do
+      if firstCrop == nil then firstCrop = crop.name end
+      graphButtons[key] = ReturnNewDockedUIElement("BarredButton", LEFT, {0, 0, 0, 0}, {100, 25}, crop.name, false , cropsButtonsHolder)
       graphButtons[key]:SetBackgroundColor(Color(85, 85, 85))
+      print("Graphing "..key)
    end
 
+   print("First Crop: "..firstCrop)
    //Creates The graph Part
-   local marketGraph = ReturnNewDockedUIElement("MGraph", FILL, {0, 0, 0, 0}, {0, 0}, firstKey, false , graphUIFrame)
-   marketGraph:SetMarketData(markets[firstKey])
+   
+   local marketGraph = ReturnNewDockedUIElement("MGraph", FILL, {0, 0, 0, 0}, {0, 0}, firstCrop, false , graphUIFrame)
+   marketGraph:SetMaxMarketValue(VGFarm.Crops[VGFarm.CropsIDs[firstCrop]].baseMarketPrice * VGFarm.MaxCropPriceMultiplier)
+   marketGraph:SetMarketData(markets[firstCrop])
 
    //Assign function for each tab
    for key, value in pairs(graphButtons) do
+      local cropName = VGFarm.Crops[key].name
       value.DoClick = function()
-         marketGraph:SetCustomText(key)
-         marketGraph:SetMarketData(markets[key])
+         marketGraph:SetCustomText(cropName)
+         marketGraph:SetMaxMarketValue(VGFarm.Crops[VGFarm.CropsIDs[cropName]].baseMarketPrice * VGFarm.MaxCropPriceMultiplier)
+         marketGraph:SetMarketData(markets[cropName])
       end
    end
 

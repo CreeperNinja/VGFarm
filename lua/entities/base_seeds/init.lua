@@ -19,6 +19,7 @@ function ENT:Initialize()
     end
     self:SetSeedAmount(self.DefaultSeedAmount)
     self:SetColor(HSVToColor(40,0.5,random(40,60)/100))
+    self:PrintTest()
 end
 
 function ENT:TouchedSeeds(ent)
