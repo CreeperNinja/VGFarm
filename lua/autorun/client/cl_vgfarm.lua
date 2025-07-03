@@ -52,8 +52,14 @@ net.Receive("SendPlayerData", SetPlayerData)
 
 function VGFarmPlayer:SendSellCropRequest(cropName)
     net.Start("RequestSellCrop")
-    print("Attempting to send Crop "..cropName)
+    print("Attempting to sell "..cropName)
     VGFarm.SmartNetCropWrite(cropName)
+    net.SendToServer()
+end
+
+function VGFarmPlayer:SendSellAllCropsRequest()
+    net.Start("RequestSellAllCrops")
+    print("Attempting to sell all crops")
     net.SendToServer()
 end
 

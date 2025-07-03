@@ -122,7 +122,7 @@ local function CreateInventoryUI(parent, playerInv)
       //sellButton:SetBackgroundColor(Color(165, 165, 165, 150))
       sellButton.DoClick = function()
          VGFarmPlayer:SendSellCropRequest(crop.name)
-         Labels[key]:SetText(key.." = "..0 or "None")
+         Labels[key]:SetText(VGFarm.Crops[key].name .." = "..0 or "None")
       end
    end
 
@@ -141,7 +141,6 @@ local function CreateWindow()
 
    //Data
    local playerInv = VGFarmPlayer:GetPlayerFarmInventory()
-   print("Player Inventory Count: "..#playerInv)
 
    //Creates A main Window Frame
    local mainUIFrame = vgui.Create("DFrame")
@@ -160,9 +159,9 @@ local function CreateWindow()
    sellAllButton:SetBarColor(Color(180, 180, 180, 255))
    sellAllButton:SetBackgroundColor(Color(82, 82, 82, 255))
    sellAllButton.DoClick = function()
-      VGFarmPlayer:SellAllCrops(markets)
+      VGFarmPlayer:SendSellAllCropsRequest()
       for key, value in pairs(inventoryLabels) do
-         value:SetText(key.." = "..playerInv[key])
+         value:SetText(VGFarm.Crops[key].name .." = ".. 0)
       end
    end
 
@@ -180,12 +179,9 @@ local function CreateWindow()
       if firstCrop == nil then firstCrop = crop.name end
       graphButtons[key] = ReturnNewDockedUIElement("BarredButton", LEFT, {0, 0, 0, 0}, {100, 25}, crop.name, false , cropsButtonsHolder)
       graphButtons[key]:SetBackgroundColor(Color(85, 85, 85))
-      print("Graphing "..key)
    end
 
-   print("First Crop: "..firstCrop)
    //Creates The graph Part
-   
    local marketGraph = ReturnNewDockedUIElement("MGraph", FILL, {0, 0, 0, 0}, {0, 0}, firstCrop, false , graphUIFrame)
    marketGraph:SetMaxMarketValue(VGFarm.Crops[VGFarm.CropsIDs[firstCrop]].baseMarketPrice * VGFarm.MaxCropPriceMultiplier)
    marketGraph:SetMarketData(markets[firstCrop])

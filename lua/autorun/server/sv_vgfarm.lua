@@ -134,6 +134,11 @@ function SVGFarm:AddCropToInventory(ply, cropName, amount)
     Send(ply)
 end
 
+local function ResetPlayerInventory(ply)
+    NetStart("ResetPlayerInventory")
+    Send(ply)
+end
+
 function SVGFarm:SellAllCrops(ply)
     local earnings = 0
     local Inventory = PlayerInventories[ply]
@@ -146,7 +151,7 @@ function SVGFarm:SellAllCrops(ply)
     end
 
     if earnings == 0 then print("Nothing To Sell") return end
-    print("Sold All Inventory ($"..earnings..")")
+    ply:ChatPrint("Sold All Inventory ($"..earnings..")")
     ResetPlayerInventory(ply)
 
     //Adding Money
@@ -170,14 +175,8 @@ function SVGFarm:SellCrop(ply, cropName)
     ResetCropInPlayerInventory(ply, cropName)
 end
 
-local function ResetPlayerInventory(ply)
-    NetStart("ResetPlayerInventory")
-    Send(ply)
-end
-
 
 -- Network Recievs
--- W.I.P
 net.Receive("RequestSellCrop", function(len, ply)
     print( "Message from " .. ply:Nick() .. " received. Its length is " .. len .. "." )
 
@@ -187,6 +186,12 @@ net.Receive("RequestSellCrop", function(len, ply)
     if inventory[cropName] == 0 then return end
 
     SVGFarm:SellCrop(ply, cropName)
+end)
+
+net.Receive("RequestSellAllCrops", function(len, ply)
+    print( "Message from " .. ply:Nick() .. " received. Its length is " .. len .. "." )
+
+    SVGFarm:SellAllCrops(ply)
 end)
 
 -- Hooks
