@@ -152,6 +152,7 @@ function SVGFarm:SellAllCrops(ply)
 
     if earnings == 0 then print("Nothing To Sell") return end
     ply:ChatPrint("Sold All Inventory ($"..earnings..")")
+    VGFarm.AddMoney(ply, earnings)
     ResetPlayerInventory(ply)
 
     //Adding Money
@@ -170,6 +171,7 @@ function SVGFarm:SellCrop(ply, cropName)
     if Inventory[cropName] == 0 then print("No "..cropName.." To Sell") return end
     local earnings = 0
     earnings = earnings + Inventory[cropName] * markets[cropName][eachMarketSize]
+    VGFarm.AddMoney(ply, earnings)
     ply:ChatPrint("You sold " .. Inventory[cropName] .. "x " .. cropName .. " for $" .. earnings .. " ("..markets[cropName][eachMarketSize].."$ each)")
     PlayerInventories[ply][cropName] = 0
     ResetCropInPlayerInventory(ply, cropName)

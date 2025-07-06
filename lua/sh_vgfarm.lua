@@ -3,6 +3,10 @@ local VGFarmUtils = include("autorun/vgfarm_utils.lua")
 //Localized Function
 local random = math.random
 
+local CurrentGamemode = engine.ActiveGamemode()
+
+print("Running Mode: "..CurrentGamemode)
+
 local VGFarm = {}
 
 VGFarm.MaxCropPriceMultiplier = 10
@@ -47,7 +51,6 @@ for key, crop in ipairs(VGFarm.Crops) do
 end
 
 VGFarm.CropBitEncoder = VGFarmUtils.GetOptimizedBitSize(#VGFarm.Crops)
-print("Bit Size For Crop Encoding is: "..VGFarm.CropBitEncoder.." bits")
 
 VGFarm.CropMarkets = {}
 
@@ -82,5 +85,13 @@ function VGFarm.CreateNewCropValue(cropName, oldValue)
     end
     return math.Clamp(newPrice, cropBasePrice, cropBasePrice * VGFarm.MaxCropPriceMultiplier)
 end
+
+function VGFarm.AddMoney(ply, amount)
+    if  CurrentGamemode == "darkrp" and ply.addMoney then
+        ply:addMoney(amount)
+        DarkRP.notify(ply, 0, 8, "You received $" .. amount .. " for selling crops.")
+    end
+end
+
 
 return VGFarm
