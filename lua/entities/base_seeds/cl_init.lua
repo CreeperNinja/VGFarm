@@ -34,8 +34,6 @@ function ENT:UpdateGridCache(seedCount)
     //Calculate amount Missing the grid
     local empty = Clamp(gridAmount - partial - filled, 0, gridAmount)
     self.EmptyGrid = empty
-
-    print("New Grid Cache: max: "..self.MaxGridAmount.."\r\n        Green: "..filled.."\r\n        Yellow: "..partial.." \r\n        Gray: "..empty)
 end
 
 function ENT:Initialize()

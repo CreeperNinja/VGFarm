@@ -28,7 +28,7 @@ local Clamp = math.Clamp
 local random = math.random
 
 function ENT:UpdateGrid(name, old, new)
-    print("Seed Amount Changed, Updating Grid")
+    print("Seed Amount Changed, Updating Grid | old: "..old.."  new: "..new)
     if new <= 0 then print("Skipped Grid Update") return end
     self:UpdateGridCache(new)
 end

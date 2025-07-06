@@ -6,9 +6,9 @@ local print = print
 local Clamp = math.Clamp
 local random = math.random
 
--- This will be called on both the Client and Server realms
 function ENT:Initialize()
-	-- Ensure code for the Server realm does not accidentally run on the Client
+    self.Ready = false 
+    self:SetSeedAmount(self.DefaultSeedAmount)
     self:SetModel(self.Model) -- Sets the model for the Entity.
     self:PhysicsInit( SOLID_VPHYSICS ) -- Initializes physics for the Entity, making it solid and interactable.
     self:SetMoveType( MOVETYPE_VPHYSICS ) -- Sets how the Entity moves, using physics.
@@ -17,9 +17,8 @@ function ENT:Initialize()
     if phys:IsValid() then -- Checks if the physics object is valid.
         phys:Wake() -- Activates the physics object, making the Entity subject to physics (gravity, collisions, etc.).
     end
-    self:SetSeedAmount(self.DefaultSeedAmount)
     self:SetColor(HSVToColor(40,0.5,random(40,60)/100))
-    self:PrintTest()
+    timer.Simple(0, function() self.Ready = true end)
 end
 
 function ENT:TouchedSeeds(ent)
@@ -51,13 +50,18 @@ end
 
 local planterClass = "base_planter"
 function ENT:TouchedPlanter(ent)
-    if not VGFarmUtils.IsDirectChildOrSame(ent, planterClass) then return end
-    
-    //If planter is full
+    if not VGFarmUtils.IsDirectChildOrSame(ent, planterClass) or not self.Ready then return end
+
+    --If planter is full
     if not ent:CanAddSeeds() then print("Seeding skipped") return end
+    
+    print("StartTouch triggered | Ready:", self.isReady)
     print("Touched A planter")
     ent:AddSeeds(self:GetClass(), 1)
     local newSeedAmount = self:GetSeedAmount() - 1
+    print("New Seed Amount is: "..newSeedAmount)
+
+    --If the seed transfer results in leaving 0 or less seeds in the seed pack -> remove the seed pack entity and perform an early exit
     if newSeedAmount <= 0 then
         print("Removing Seeds")
         self:Remove()
