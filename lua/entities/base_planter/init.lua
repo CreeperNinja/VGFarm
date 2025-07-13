@@ -4,9 +4,7 @@ include("shared.lua")
 
 WaterDrainingEntities = {}
 
--- This will be called on both the Client and Server realms
 function ENT:Initialize()
-	-- Ensure code for the Server realm does not accidentally run on the Client
     self:SetModel(self.Model) -- Sets the model for the Entity.
     self:PhysicsInit( SOLID_VPHYSICS ) -- Initializes physics for the Entity, making it solid and interactable.
     self:SetMoveType( MOVETYPE_VPHYSICS ) -- Sets how the Entity moves, using physics.
@@ -21,7 +19,7 @@ function ENT:Initialize()
 end
 
 --time it takes to update drain and growth in seconds (shorther time will send more net massages, while longer time will seem to be less responsive)
-local drainUpdateSpeed = 2
+local drainUpdateSpeed = 5
 
 local drainSpeed = 1
 local drainAmount = 1
@@ -37,18 +35,6 @@ function ENT:AddToDrainingList()
     if not self:IsInDrainingList() then
         WaterDrainingEntities[self] = true 
     end
-end
-
-function ENT:SpawnCrop(entClass)
-    local crop = ents.Create("base_crop")
-    crop.CropHolder = entClass.CropClassName 
-    crop.CropAmount = entClass:GetRandomCropAmount(self.IsFertelized)
-    print("Spawning "..crop.CropAmount.." "..entClass.CropClassName)
-    crop:SetPos(self:GetPos() + self:GetRight() + self:GetUp() * 30)
-    crop:Spawn()
-    crop:Activate()
-    if self.IsFertelized then print("Was Fertelized") return end
-    print("Was Not Fertelized")
 end
 
 function ENT:CanAddSeeds()
@@ -67,9 +53,23 @@ function ENT:AddSeeds(type, amount)
         print("Adding To ".. i)
         table.insert(self.Seeds, {seedType = type, growProgress = 0})
     end
-    print("Planter now has ".. #self.Seeds .." Seeds")
     self:AddToDrainingList()
     print("Added "..self:GetClass().." To Drain Update")
+end
+
+function ENT:SpawnCrop(entClass, amount)
+    local crop = ents.Create("base_crop")
+    crop.CropHolder = entClass.CropClassName 
+    crop.CropAmount = amount
+    crop:SetPos(self:GetPos() + self:GetRight() + self:GetUp() * 30)
+    crop:Spawn()
+    crop:Activate()
+end
+
+function ENT:SpawnCrops(cropHashMap)
+    for seedENT, amount in pairs(cropHashMap) do
+        self:SpawnCrop(seedENT, amount)
+    end
 end
 
 function ENT:GrowSeeds(planter)
@@ -78,8 +78,9 @@ function ENT:GrowSeeds(planter)
     --optimization
     local lastCheckedType = nil 
     local seedENT = nil 
+    local cropsToSpawn = {}
 
-    print("-- Planter now has ".. #self.Seeds .." Seeds --")
+    --growth code
     for key, seed in pairs(self.Seeds) do
         seed.growProgress = seed.growProgress + growthAmount
 
@@ -90,21 +91,25 @@ function ENT:GrowSeeds(planter)
         end
 
         print(seed.seedType.." "..seed.growProgress.." / "..seedENT.GrowTime)
+
         --check if seed is still growing
         if seed.growProgress < seedENT.GrowTime then continue end
 
-        print(seed.seedType.." Finished Growing")
-        self:SpawnCrop(seedENT)
+        --code when finished growing
+        if not cropsToSpawn[seedENT] then 
+            cropsToSpawn[seedENT] = 0 
+        end
+        cropsToSpawn[seedENT] = cropsToSpawn[seedENT] + seedENT:GetRandomCropAmount(self.IsFertelized)
         self.Seeds[key] = nil 
     end
-
+    self:SpawnCrops(cropsToSpawn)
     if #self.Seeds <= 0 then WaterDrainingEntities[planter] = nil end
 end
+
 
 timer.Create("DrainWater_Global", drainUpdateSpeed, 0, function()
 
     for planter, isDraining in pairs(WaterDrainingEntities) do
-        print("Entity Drain Updated")
 
         if not IsValid(planter) then
             print("Removed Invalid Entity ".. planter)

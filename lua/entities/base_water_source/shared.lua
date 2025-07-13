@@ -1,4 +1,3 @@
--- Defines the Entity's type, base, printable name, and author for shared access (both server and client)
 ENT.Type = "anim" -- Sets the Entity type to 'anim', indicating it's an animated Entity.
 ENT.Base = "base_gmodentity" -- Specifies that this Entity is based on the 'base_gmodentity', inheriting its functionality.
 ENT.PrintName = "Base Water Source" -- The name that will appear in the spawn menu.

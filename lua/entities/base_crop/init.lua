@@ -20,9 +20,6 @@ end
 
 function ENT:Use(activator, caller)
     if not IsValid(activator) or not activator:IsPlayer() then return end
-
-    print(activator:Nick() .. " used the entity!")
-    -- Do something, e.g., open UI, pick up, etc.
     SVGFarm:AddCropToInventory(activator, self.CropHolder, self.CropAmount)
     self:Remove()
 end
