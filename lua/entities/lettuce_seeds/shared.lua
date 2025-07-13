@@ -1,4 +1,3 @@
--- Defines the Entity's type, base, printable name, and author for shared access (both server and client)
 ENT.Type = "anim" -- Sets the Entity type to 'anim', indicating it's an animated Entity.
 ENT.Base = "base_seeds"
 ENT.PrintName = "Lettuce Seeds" -- The name that will appear in the spawn menu.

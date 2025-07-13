@@ -20,8 +20,24 @@ function ENT:Initialize()
 
 end
 
+--time it takes to update drain and growth in seconds (shorther time will send more net massages, while longer time will seem to be less responsive)
+local drainUpdateSpeed = 2
+
 local drainSpeed = 1
 local drainAmount = 1
+
+local growthAmount = 1
+
+function ENT:IsInDrainingList()
+    if WaterDrainingEntities[self] then return true end
+    return false
+end
+
+function ENT:AddToDrainingList()
+    if not self:IsInDrainingList() then
+        WaterDrainingEntities[self] = true 
+    end
+end
 
 function ENT:SpawnCrop(entClass)
     local crop = ents.Create("base_crop")
@@ -36,62 +52,75 @@ function ENT:SpawnCrop(entClass)
 end
 
 function ENT:CanAddSeeds()
-    if self.Seeds[1] ~= nil then print("Pot Already Full") return false end
+    if self.Seeds ~= nil and #self.Seeds >= self.SeedLimit then print("Pot Already Full") return false end
+    print("Can Add Seeds")
     return true
 end
 
+function ENT:ReturnAvailableSpace()
+    if self.Seeds == nil then print("Error") return 0 end
+    return self.SeedLimit - #self.Seeds
+end
+
 function ENT:AddSeeds(type, amount)
-    self.Seeds[1] = {type, 0}
-    table.insert(WaterDrainingEntities, 1, self)
+    for i = 1, amount do
+        print("Adding To ".. i)
+        table.insert(self.Seeds, {seedType = type, growProgress = 0})
+    end
+    print("Planter now has ".. #self.Seeds .." Seeds")
+    self:AddToDrainingList()
     print("Added "..self:GetClass().." To Drain Update")
 end
 
-function ENT:GrowSeeds(tableIndex)
-    if self.Seeds[1] == nil then return end
+function ENT:GrowSeeds(planter)
+    if #self.Seeds <= 0 then return end
 
-    //adds progress to the seed
-    self.Seeds[1][2] = self.Seeds[1][2] + 1
-    print("New Seed Progress "..self.Seeds[1][2])
-    local ent = scripted_ents.Get(self.Seeds[1][1])
+    --optimization
+    local lastCheckedType = nil 
+    local seedENT = nil 
 
-    //If seed has reached full growth, remove it from pot, draining cycle, and spawn crop
-    if self.Seeds[1][2] >= ent.GrowTime then 
-        print(self.Seeds[1][1].." Finished Growing")
-        self:SpawnCrop(ent)
-        self.Seeds[1] = nil
-        if tableIndex > 0 then
-            table.remove(WaterDrainingEntities, tableIndex)
+    print("-- Planter now has ".. #self.Seeds .." Seeds --")
+    for key, seed in pairs(self.Seeds) do
+        seed.growProgress = seed.growProgress + growthAmount
+
+        --optimization
+        if lastCheckedType ~= seed.seedType then
+            seedENT = scripted_ents.Get(seed.seedType)
+            lastCheckedType = seed.seedType 
         end
+
+        print(seed.seedType.." "..seed.growProgress.." / "..seedENT.GrowTime)
+        --check if seed is still growing
+        if seed.growProgress < seedENT.GrowTime then continue end
+
+        print(seed.seedType.." Finished Growing")
+        self:SpawnCrop(seedENT)
+        self.Seeds[key] = nil 
     end
+
+    if #self.Seeds <= 0 then WaterDrainingEntities[planter] = nil end
 end
 
-function ENT:GetWaterDrainAmount()
-    return drainAmount
-end
+timer.Create("DrainWater_Global", drainUpdateSpeed, 0, function()
 
-timer.Create("DrainWater_Global", drainSpeed, 0, function()
-    for i = #WaterDrainingEntities, 1, -1 do
-        local ent = WaterDrainingEntities[i]
-        local tableIndex = i
-        
-        if not IsValid(ent) then
-            print("Removed Invalid Entity ".. i)
-            table.remove(WaterDrainingEntities, i)
+    for planter, isDraining in pairs(WaterDrainingEntities) do
+        print("Entity Drain Updated")
+
+        if not IsValid(planter) then
+            print("Removed Invalid Entity ".. planter)
+            WaterDrainingEntities[planter] = nil
             continue
         end
 
-        local waterLevel = ent:GetWaterLevel()
-        local drain = ent:GetWaterDrainAmount()
-        waterLevel = waterLevel - drain
+        local waterLevel = planter:GetWaterLevel()
+        waterLevel = waterLevel - drainAmount * drainSpeed
         if waterLevel <= 0 then
             waterLevel = 0
-            table.remove(WaterDrainingEntities, i)
-            tableIndex = 0
-            print("Entity " .. ent:EntIndex() .. " finished draining.")
+            WaterDrainingEntities[planter] = nil
+            print("Entity " .. planter:EntIndex() .. " finished draining.")
         end
-        print(i)
-        ent:GrowSeeds(tableIndex)
-        ent:SetWaterLevel(waterLevel)
+        planter:GrowSeeds(planter)
+        planter:SetWaterLevel(waterLevel)
     end
 
 end)

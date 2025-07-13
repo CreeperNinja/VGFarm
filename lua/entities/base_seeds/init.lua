@@ -53,20 +53,24 @@ function ENT:TouchedPlanter(ent)
     if not VGFarmUtils.IsDirectChildOrSame(ent, planterClass) or not self.Ready then return end
 
     --If planter is full
-    if not ent:CanAddSeeds() then print("Seeding skipped") return end
+    local availableSpace = ent:ReturnAvailableSpace()
+    if availableSpace <= 0 then print("Seeding skipped") return end
     
     print("StartTouch triggered | Ready:", self.isReady)
     print("Touched A planter")
-    ent:AddSeeds(self:GetClass(), 1)
-    local newSeedAmount = self:GetSeedAmount() - 1
-    print("New Seed Amount is: "..newSeedAmount)
 
-    --If the seed transfer results in leaving 0 or less seeds in the seed pack -> remove the seed pack entity and perform an early exit
-    if newSeedAmount <= 0 then
+    local seedAmount = self:GetSeedAmount()
+    local newSeedAmount = seedAmount - availableSpace
+
+    if newSeedAmount <= 0 then 
+        ent:AddSeeds(self:GetClass(), seedAmount)
         print("Removing Seeds")
         self:Remove()
         return
     end
+
+    print("New Seed Amount is: "..newSeedAmount)
+    ent:AddSeeds(self:GetClass(), availableSpace)
     self:SetSeedAmount(newSeedAmount)
 end
 
