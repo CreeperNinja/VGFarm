@@ -39,7 +39,15 @@ local function SetCropAmount()
     local smartBit = VGFarmUtils.SmartNetBitRead()
     local cropAmount = net.ReadUInt(smartBit)
     VGFarmPlayer.Inventory[cropName] = cropAmount
-    --print("Player Now Has "..cropAmount.." "..cropName.." (Client Side)    Used Bits: "..smartBit.." + 3 + 4 = "..smartBit + 3 + 4 .." Total")
+end
+
+local function SetCrops()
+    local differentCropTypes = net.ReadUInt(VGFarm.CropBitEncoder)
+    for i = 1, differentCropTypes do
+        local cropName = VGFarm.SmartNetCropRead()
+        local cropAmount = VGFarmUtils.SmartNetUIntRead()
+        VGFarmPlayer.Inventory[cropName] = cropAmount
+    end
 end
 
 net.Receive("ResetPlayerInventory", ResetInventory)
@@ -47,6 +55,8 @@ net.Receive("ResetPlayerInventory", ResetInventory)
 net.Receive("ResetCropInPlayerInventory", ResetCropInInventory)
 
 net.Receive("SendPlayerInventoryCrop", SetCropAmount)
+
+net.Receive("SendPlayerInventoryCrops", SetCrops)
 
 net.Receive("SendPlayerData", SetPlayerData)
 

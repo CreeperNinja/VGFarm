@@ -19,6 +19,13 @@ VGFarm.marketUpdateFrequency = 5
 //min 2, 1 for effect and another for value
 VGFarm.EachMarketSize = 20
 
+VGFarm.ItemPurchaseLimit = 
+{
+    { name = "planter_small",      limit = 1},
+    { name = "planter_medium",      limit = 1},
+    { name = "planter_large",      limit = 1},
+}
+
 VGFarm.LoadPlayerInventoryFromDatabase = false 
 
 VGFarm.Crops =

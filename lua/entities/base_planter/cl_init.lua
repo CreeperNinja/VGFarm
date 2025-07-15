@@ -54,8 +54,12 @@ function ENT:DrawTranslucent()
     local drawPos = self:GetPos() + self:GetUp() * 75 
     local toEye = EyePos() - drawPos
     local normal = toEye:GetNormalized()
+    local ang = self:GetAngles()
 
     self.DrawWater(drawPos, normal)
 
+    cam.Start3D2D(self:GetPos() + self:GetForward() * 50 , ang, 1)
+        VGFarmUtils.DrawBox(self.minHolderDetectionRange, self.maxHolderDetectionRange)
+    cam.End3D2D()
 end
 

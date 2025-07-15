@@ -37,6 +37,7 @@ util.AddNetworkString("RequestSellAllCrops")
 util.AddNetworkString("ResetPlayerInventory")
 util.AddNetworkString("ResetCropInPlayerInventory")
 util.AddNetworkString("SendPlayerInventoryCrop")
+util.AddNetworkString("SendPlayerInventoryCrops")
 util.AddNetworkString("SendPlayerData")
 util.AddNetworkString("SendMarketData")
 util.AddNetworkString("SendNewMarketDataValues")
@@ -117,7 +118,8 @@ local function SetInitialPlayerInventory(ply)
     end
 end
 
-function SVGFarm:AddCropToInventory(ply, cropName, amount)
+-- Currently not in use
+function SVGFarm:AddCropToPlayerInventory(ply, cropName, amount)
     if not IsValid(ply) or PlayerInventories[ply][cropName] == nil then print("Invalid Player Or Crop, Cannot Add To Inventory") return end
 
     PlayerInventories[ply][cropName] = PlayerInventories[ply][cropName] + amount
@@ -131,6 +133,23 @@ function SVGFarm:AddCropToInventory(ply, cropName, amount)
     VGFarmUtils.SmartNetBitWrite(smartBit)
     WriteUInt(PlayerInventories[ply][cropName], smartBit)
 
+    Send(ply)
+end
+
+-- Currently used instead of its singular version avove
+function SVGFarm:AddCropsToPlayerInventory(ply, cropsHashMap)
+    NetStart("SendPlayerInventoryCrops")
+    WriteUInt(table.Count(cropsHashMap), VGFarm.CropBitEncoder)
+
+    for cropName, amount in pairs(cropsHashMap) do
+        PlayerInventories[ply][cropName] = PlayerInventories[ply][cropName] + amount
+        local cropAmount = PlayerInventories[ply][cropName]
+        print("Player Now has "..amount.." "..cropName)
+        
+        --Sends crop data
+        VGFarm.SmartNetCropWrite(cropName)
+        VGFarmUtils.SmartNetUIntWrite(amount)
+    end
     Send(ply)
 end
 

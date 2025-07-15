@@ -1,7 +1,10 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 include("shared.lua")
-local SVGFarm = include("autorun/server/sv_vgfarm.lua")
+
+AddCSLuaFile("sh_vgfarm.lua")
+local VGFarm = include("sh_vgfarm.lua")
+
 
 -- This will be called on both the Client and Server realms
 function ENT:Initialize()
@@ -16,10 +19,40 @@ function ENT:Initialize()
     end
     self:SetUseType(SIMPLE_USE) -- or CONTINUOUS_USE if needed
     print("Spawned Crop Entity")
+    self.ReadyForCrops = false 
+end
+
+util.AddNetworkString("ClientReadyForCrops")
+util.AddNetworkString("SendHolderData")
+
+function ENT:SendHolderData()
+    if not self.ReadyForCrops then return end
+    net.Start("SendHolderData")
+    net.WriteEntity(self)
+    net.WriteUInt(table.Count(self.Crops), VGFarm.CropBitEncoder)
+    for cropType, amount in pairs(self.Crops) do
+        VGFarm.SmartNetCropWrite(cropType)
+        VGFarmUtils.SmartNetUIntWrite(amount)
+    end
+    net.Broadcast()
+end
+
+function ENT:AddCrops(cropHashMap)
+    for cropType, amount in pairs(cropHashMap) do
+        self.Crops[cropType] = (self.Crops[cropType] or 0) + amount
+    end
+    self:SendHolderData(ply)
 end
 
 function ENT:Use(activator, caller)
     if not IsValid(activator) or not activator:IsPlayer() then return end
-    SVGFarm:AddCropToInventory(activator, self.CropHolder, self.CropAmount)
+    SVGFarm:AddCropsToPlayerInventory(activator, self.Crops)
     self:Remove()
 end
+
+net.Receive("ClientReadyForCrops", function(len, ply)
+    local ent = net.ReadEntity()
+    if not IsValid(ent) or not ent.Crops then return end
+    ent.ReadyForCrops = true
+    ent:SendHolderData(ply)
+end)

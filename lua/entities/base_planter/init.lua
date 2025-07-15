@@ -24,7 +24,7 @@ local drainUpdateSpeed = 5
 local drainSpeed = 1
 local drainAmount = 1
 
-local growthAmount = 1
+local growthAmount = 5
 
 function ENT:IsInDrainingList()
     if WaterDrainingEntities[self] then return true end
@@ -57,7 +57,7 @@ function ENT:AddSeeds(type, amount)
     print("Added "..self:GetClass().." To Drain Update")
 end
 
-function ENT:SpawnCrop(entClass, amount)
+function ENT:SpawnCrop(entClass, amount, cropHolderEntity)
     local crop = ents.Create("base_crop")
     crop.CropHolder = entClass.CropClassName 
     crop.CropAmount = amount
@@ -66,10 +66,19 @@ function ENT:SpawnCrop(entClass, amount)
     crop:Activate()
 end
 
+function ENT:SpawnEmpyCropHolder()
+    local crop = ents.Create("base_cropholder")
+    crop:SetPos(self:GetPos() + self:GetForward() * 50)
+    crop:Spawn()
+    crop:Activate()
+    return crop
+end
+
 function ENT:SpawnCrops(cropHashMap)
-    for seedENT, amount in pairs(cropHashMap) do
-        self:SpawnCrop(seedENT, amount)
-    end
+    local cropHolderEntity = VGFarmUtils.GetNearbyEntityInBox(self:GetPos() + self:GetForward() * 50, self.minHolderDetectionRange, self.maxHolderDetectionRange, "base_cropholder")
+    if cropHolderEntity == nil then cropHolderEntity = self:SpawnEmpyCropHolder() end
+    cropHolderEntity:AddCrops(cropHashMap)
+    print("Spawned And Added Crops")
 end
 
 function ENT:GrowSeeds(planter)
@@ -79,6 +88,7 @@ function ENT:GrowSeeds(planter)
     local lastCheckedType = nil 
     local seedENT = nil 
     local cropsToSpawn = {}
+    local cropsToSpawnCount = 0
 
     --growth code
     for key, seed in pairs(self.Seeds) do
@@ -96,13 +106,18 @@ function ENT:GrowSeeds(planter)
         if seed.growProgress < seedENT.GrowTime then continue end
 
         --code when finished growing
-        if not cropsToSpawn[seedENT] then 
-            cropsToSpawn[seedENT] = 0 
+        if not cropsToSpawn[seedENT.CropClassName] then 
+            cropsToSpawn[seedENT.CropClassName] = 0 
+            cropsToSpawnCount = cropsToSpawnCount + 1
         end
-        cropsToSpawn[seedENT] = cropsToSpawn[seedENT] + seedENT:GetRandomCropAmount(self.IsFertelized)
+        cropsToSpawn[seedENT.CropClassName] = cropsToSpawn[seedENT.CropClassName] + seedENT:GetRandomCropAmount(self.IsFertelized)
         self.Seeds[key] = nil 
     end
-    self:SpawnCrops(cropsToSpawn)
+
+    if cropsToSpawnCount > 0 then
+        self:SpawnCrops(cropsToSpawn)
+    end
+
     if #self.Seeds <= 0 then WaterDrainingEntities[planter] = nil end
 end
 

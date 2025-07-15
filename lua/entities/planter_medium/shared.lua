@@ -7,3 +7,5 @@ ENT.Spawnable = true -- Specifies whether this Entity can be spawned by players 
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 ENT.SeedLimit = 3
+
+ENT.Model = "addons/VGFarm/models/planter_medium/planter_medium.mdl"

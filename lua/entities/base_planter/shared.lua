@@ -3,7 +3,7 @@ ENT.Base = "base_gmodentity" -- Specifies that this Entity is based on the 'base
 ENT.PrintName = "Base Planter" -- The name that will appear in the spawn menu.
 ENT.Author = "Void" -- The author's name for this Entity.
 ENT.Category = "VGFarm" -- The category for this Entity in the spawn menu.
-ENT.Spawnable = false  -- Specifies whether this Entity can be spawned by players in the spawn menu.
+ENT.Spawnable = false   -- Specifies whether this Entity can be spawned by players in the spawn menu.
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 ENT.Model = "addons/VGFarm/models/pot/pot.mdl"
@@ -16,6 +16,8 @@ ENT.SeedLimit = 1
 ENT.Seeds = {}
 ENT.IsFertelized = true  
 ENT.WaterLevelMaterial = Material("animatedtextures/circle_256px_100frames/circle_256px_100frames")
+ENT.minHolderDetectionRange = Vector(40, 40, 20)
+ENT.maxHolderDetectionRange = Vector(-30, -40, -10)
 
 function ENT:UpdateFrame(name, old, new) 
     self.frame = math.ceil(new / self.MaxWaterLevel * self.frames) - 1
