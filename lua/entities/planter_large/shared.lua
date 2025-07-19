@@ -8,4 +8,4 @@ ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 ENT.SeedLimit = 6
 
-ENT.Model = "addons/VGFarm/models/planter_large/planter_large.mdl"
+ENT.Model = "models/planter_large/planter_large.mdl"

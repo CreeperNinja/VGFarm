@@ -18,7 +18,7 @@ ENT.GrowTime = 10
 ENT.CropClassName = "base_crop"
 ENT.CropMinAmount = 1
 ENT.CropMaxAmount = 2
-ENT.Model = "addons/VGFarm/models/seedPack2/seedPack2.mdl"
+ENT.Model = "models/seedPack2/seedPack2.mdl"
 ENT.yGridOffset = 50
 ENT.SeedIcon = Material("icons/seedPacks/questionMarkIcon.png")
 

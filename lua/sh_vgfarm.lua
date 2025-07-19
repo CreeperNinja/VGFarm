@@ -100,5 +100,4 @@ function VGFarm.AddMoney(ply, amount)
     end
 end
 
-
 return VGFarm

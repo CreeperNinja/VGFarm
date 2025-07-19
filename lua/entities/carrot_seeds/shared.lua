@@ -15,6 +15,6 @@ ENT.GrowTime = 5
 ENT.CropClassName = "Carrots"
 ENT.CropAmount = 2
 ENT.CropMaxAmount = 4
-ENT.Model = "addons/VGFarm/models/seedPack2/seedPack2.mdl"
+ENT.Model = "models/seedPack2/seedPack2.mdl"
 ENT.yGridOffset = 50
 ENT.SeedIcon = Material("icons/seedPacks/carrotIcon.png")

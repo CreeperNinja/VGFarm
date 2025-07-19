@@ -6,7 +6,7 @@ ENT.Category = "VGFarm" -- The category for this Entity in the spawn menu.
 ENT.Spawnable = true -- Specifies whether this Entity can be spawned by players in the spawn menu.
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
-ENT.Model = "addons/VGFarm/models/pot/pot.mdl"
+ENT.Model = "models/pot/pot.mdl"
 ENT.DefaultWaterLevel = 180
 ENT.MaxWaterLevel = 180
 

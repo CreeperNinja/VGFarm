@@ -6,7 +6,7 @@ ENT.Category = "VGFarm" -- The category for this Entity in the spawn menu.
 ENT.Spawnable = false  -- Specifies whether this Entity can be spawned by players in the spawn menu.
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
-ENT.Model = "addons/VGFarm/models/sack/sack.mdl"
+ENT.Model = "models/sack/sack.mdl"
 ENT.Crops = {}
 
 function ENT:AddCrop(cropType, amount)

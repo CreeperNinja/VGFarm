@@ -12,6 +12,6 @@ ENT.yGrid = 4
 ENT.MaxGridAmount = ENT.xGrid * ENT.yGrid
 ENT.MaxSeedAmount = ENT.MaxGridAmount * 2
 ENT.CropClassName = "Cucumbers"
-ENT.Model = "addons/VGFarm/models/seedPack2/seedPack2.mdl"
+ENT.Model = "models/seedPack2/seedPack2.mdl"
 ENT.yGridOffset = 50
 ENT.SeedIcon = Material("icons/seedPacks/cucumberIcon.png")
