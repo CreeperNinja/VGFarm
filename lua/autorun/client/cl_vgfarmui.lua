@@ -206,8 +206,6 @@ local function CreateWindow()
 
 end
 
-//Hooks
-hook.Add("PlayerButtonDown", "OpenFarmingMenu", function( ply, button )
-	if button != KEY_R then return end
+concommand.Add("vgfarm_open_sell_menu", function(ply, cmd, args)
    CreateWindow()
 end)
