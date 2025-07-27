@@ -7,5 +7,8 @@ ENT.Spawnable = true -- Specifies whether this Entity can be spawned by players 
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 ENT.SeedLimit = 6
-
 ENT.Model = "models/planter_large/planter_large.mdl"
+
+--Water Amount
+ENT.DefaultWaterAmount = 90
+ENT.MaxWaterAmount = 360

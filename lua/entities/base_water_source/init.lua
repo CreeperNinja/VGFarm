@@ -15,35 +15,40 @@ function ENT:Initialize()
     if phys:IsValid() then -- Checks if the physics object is valid.
         phys:Wake() -- Activates the physics object, making the Entity subject to physics (gravity, collisions, etc.).
     end
-    self:SetWaterLevel(self.DefaultWaterLevel)
+    self:SetWaterAmount(self.DefaultWaterAmount)
 
 end
 
-//Move Water Amount to planter
-function ENT:StartTouch(ent)
-    if not IsValid(ent) or ent:GetClass() ~= "base_planter" then return end
+local planterClass = "base_planter"
+function ENT:TouchedPlanter(ent)    
+    if not VGFarmUtils.IsDirectChildOrSame(ent, planterClass) then return end
     
-    local selfAmount = self:GetWaterLevel()
-    local selfMax = self.MaxWaterLevel
-    local entAmount = ent:GetWaterLevel()
-    local entMax = ent.MaxWaterLevel
+    local selfAmount = self:GetWaterAmount()
+    local selfMax = self.MaxWaterAmount
+    local planterAmount = ent:GetWaterAmount()
+    local planterMax = ent.MaxWaterAmount
     
-    //If planter is full
-    if entAmount >= entMax then print("Watering skipped") return end
+    --If planter is full then stop interaction
+    if planterAmount >= planterMax then print("Watering skipped") return end
 
-    local total = selfAmount + entAmount
+    local totalAdded = selfAmount + planterAmount
+    local planterNewAmount = min(totalAdded, planterMax)
 
-    local entNewAmount = min(total, selfMax)
+    ent:SetWaterAmount(planterNewAmount)
 
-    ent:SetWaterLevel(entNewAmount)
+    local usedAmount = planterNewAmount - planterAmount
     
-    if total > selfMax then
-        local newAmount = total - selfMax
-        print("Planter now has "..entNewAmount.." | Watering can now has "..newAmount)
-        self:SetWaterLevel(newAmount)
-    else
-        self:SetWaterLevel(0)
-        print("Watering Can Empty")
-        self:Remove() -- Absorbed completely
+    if usedAmount < selfMax then
+        local newAmount = totalAdded - selfMax
+        self:SetWaterAmount(newAmount)
+        return
     end
+    self:SetWaterAmount(0)
+    print("Watering Can Empty")
+    self:Remove() -- Absorbed completely
+end
+
+--Move Water Amount to planter
+function ENT:StartTouch(ent)
+    self:TouchedPlanter(ent)   
 end

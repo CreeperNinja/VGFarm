@@ -6,30 +6,33 @@ ENT.Category = "VGFarm" -- The category for this Entity in the spawn menu.
 ENT.Spawnable = false  -- Specifies whether this Entity can be spawned by players in the spawn menu.
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
-ENT.DefaultSeedAmount = 5 -- default amount
+--Model
+ENT.Model = "models/seedpack/seedpack.mdl"
+
+--Grid
 ENT.xGrid = 5
 ENT.yGrid = 4
 ENT.MaxGridAmount = ENT.xGrid * ENT.yGrid
 ENT.MaxSeedAmount = ENT.MaxGridAmount * 2
-ENT.FilledGrid = 0
-ENT.PartialGrid = 0
-ENT.EmptyGrid = 0
+ENT.yGridOffset = 50
+
+--Seed
+ENT.DefaultSeedAmount = 5 -- default amount
 ENT.GrowTime = 10
-ENT.CropClassName = "base_crop"
 ENT.CropMinAmount = 1
 ENT.CropMaxAmount = 2
-ENT.Model = "models/seedPack2/seedPack2.mdl"
-ENT.yGridOffset = 50
 ENT.SeedIcon = Material("icons/seedPacks/questionMarkIcon.png")
+
+--Crop - the crop nane that this seed will produce
+ENT.CropClassName = "base_crop"
 
 local print = print
 local Clamp = math.Clamp
 local random = math.random
 
 function ENT:UpdateGrid(name, old, new)
-    print("Seed Amount Changed, Updating Grid | old: "..old.."  new: "..new)
-    if new <= 0 then print("Skipped Grid Update") return end
-    self:UpdateGridCache(new)
+    if new <= 0 then return end
+    self:CalculateGridBoxes(new)
 end
 
 function ENT:SetupDataTables()
@@ -39,10 +42,6 @@ function ENT:SetupDataTables()
         self:NetworkVarNotify("SeedAmount", self.UpdateGrid)
     end
 
-end
-
-function ENT:PrintTest()
-    print(self.CropClassName.." Seeds with min and max "..self.CropMinAmount.." "..self.CropMaxAmount)
 end
 
 function ENT:GetRandomCropAmount(IsFertelized)

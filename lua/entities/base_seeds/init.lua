@@ -2,12 +2,12 @@ AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 include("shared.lua")
 
+--Localiezd Functions
 local print = print
 local Clamp = math.Clamp
 local random = math.random
 
 function ENT:Initialize()
-    self.Ready = false 
     self:SetSeedAmount(self.DefaultSeedAmount)
     self:SetModel(self.Model) -- Sets the model for the Entity.
     self:PhysicsInit( SOLID_VPHYSICS ) -- Initializes physics for the Entity, making it solid and interactable.
@@ -28,7 +28,7 @@ function ENT:TouchedSeeds(ent)
     local selfMax = self.MaxSeedAmount
     local entAmount = ent:GetSeedAmount()
     
-    //If The Other Seed Pack Has No Remaining Seeds OR Pack Is Already Full Then Skip 
+    --If The Other Seed Pack Has No Remaining Seeds OR Pack Is Already Full Then Skip 
     if entAmount <= 0 or selfAmount == selfMax then print("One Of The Entities Has Skipped Seed Calculation") return end
     
     -- Prevent both entities from trying to merge at the same time - only the newer one will merge into the older
@@ -50,26 +50,22 @@ end
 
 local planterClass = "base_planter"
 function ENT:TouchedPlanter(ent)
-    if not VGFarmUtils.IsDirectChildOrSame(ent, planterClass) or not self.Ready then return end
+    if not VGFarmUtils.IsDirectChildOrSame(ent, planterClass) then return end
 
     --If planter is full
     local availableSpace = ent:ReturnAvailableSpace()
-    if availableSpace <= 0 then print("Seeding skipped") return end
+    if availableSpace <= 0 then VGFarmUtils.SmartPrint("Seeding skipped") return end
     
-    print("StartTouch triggered | Ready:", self.isReady)
-    print("Touched A planter")
-
     local seedAmount = self:GetSeedAmount()
     local newSeedAmount = seedAmount - availableSpace
 
     if newSeedAmount <= 0 then 
         ent:AddSeeds(self:GetClass(), seedAmount)
-        print("Removing Seeds")
+        VGFarmUtils.SmartPrint("Removed Seed Pack")
         self:Remove()
         return
     end
 
-    print("New Seed Amount is: "..newSeedAmount)
     ent:AddSeeds(self:GetClass(), availableSpace)
     self:SetSeedAmount(newSeedAmount)
 end

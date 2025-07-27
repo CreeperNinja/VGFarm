@@ -24,13 +24,6 @@ local eachMarketSize = VGFarm.EachMarketSize
 local markets = VGFarm.CropMarkets
 local totalMarkets = table.Count(markets)
 
-local baseItemLimitTable = 
-{
-    ["Pots"] = 10,
-    ["Gardens"] = 6,
-    ["Seeds"] = 20  
-}
-
 //Network Strings
 util.AddNetworkString("RequestSellCrop")
 util.AddNetworkString("RequestSellAllCrops")
@@ -69,24 +62,10 @@ function SendAllMarketData(ply)
     Send(ply)
 end
 
---Sends New Market Values To Specific Player
-function SendNewMarketValues(ply)
-    net.Start("SendNewMarketDataValues")
-    WriteUInt(intBit, 6)
-    for marketName, marketData in pairs(markets) do
-        //print("Sending ".. marketName)
-        print("Sent new "..marketName.." values "..marketData[eachMarketSize])
-        WriteString(marketName)
-        WriteUInt(marketData[eachMarketSize], intBit)
-    end
-    Send(ply)
-end
-
 --Sends New Market Values To All Players
 function SendNewMarketValuesToAll()
     net.Start("SendNewMarketDataValues")
     for marketName, marketData in pairs(markets) do
-        //print("Sending ".. marketName)
         VGFarm.SmartNetCropWrite(marketName)
         VGFarmUtils.SmartNetFloatToIntWrite(marketData[eachMarketSize])
     end
@@ -144,14 +123,15 @@ function SVGFarm:AddCropsToPlayerInventory(ply, cropsHashMap)
     for cropName, amount in pairs(cropsHashMap) do
         PlayerInventories[ply][cropName] = PlayerInventories[ply][cropName] + amount
         local cropAmount = PlayerInventories[ply][cropName]
-        print("Player Now has "..amount.." "..cropName)
+        VGFarmUtils.SmartPrint(ply:Nick().." Now has "..cropAmount.." "..cropName)
         
         --Sends crop data
         VGFarm.SmartNetCropWrite(cropName)
-        VGFarmUtils.SmartNetUIntWrite(amount)
+        VGFarmUtils.SmartNetUIntWrite(cropAmount)
     end
     Send(ply)
 end
+
 
 local function ResetPlayerInventory(ply)
     NetStart("ResetPlayerInventory")
@@ -161,7 +141,6 @@ end
 function SVGFarm:SellAllCrops(ply)
     local earnings = 0
     local Inventory = PlayerInventories[ply]
-    //if !IsValid(Inventory) then print("No Inventory Set") return end
 
     for key, value in pairs(Inventory) do
         if value == 0 then continue end
@@ -174,11 +153,10 @@ function SVGFarm:SellAllCrops(ply)
     VGFarm.AddMoney(ply, earnings)
     ResetPlayerInventory(ply)
 
-    //Adding Money
-    //playerMoney = playerMoney + earnings
     return earnings
 end
 
+--Sends an crop to set its value to 0
 local function ResetCropInPlayerInventory(ply, cropName)
     NetStart("ResetCropInPlayerInventory")
     VGFarm.SmartNetCropWrite(cropName)
@@ -187,20 +165,21 @@ end
 
 function SVGFarm:SellCrop(ply, cropName)
     local Inventory = PlayerInventories[ply]
-    if Inventory[cropName] == 0 then print("No "..cropName.." To Sell") return end
-    local earnings = 0
-    earnings = earnings + Inventory[cropName] * markets[cropName][eachMarketSize]
-    VGFarm.AddMoney(ply, earnings)
+
+    if Inventory[cropName] == 0 then VGFarmUtils.SmartPrint("No "..cropName.." To Sell") return end
+
+    local earnings = Inventory[cropName] * markets[cropName][eachMarketSize]
+
     ply:ChatPrint("You sold " .. Inventory[cropName] .. "x " .. cropName .. " for $" .. earnings .. " ("..markets[cropName][eachMarketSize].."$ each)")
+    VGFarm.AddMoney(ply, earnings)
     PlayerInventories[ply][cropName] = 0
+
     ResetCropInPlayerInventory(ply, cropName)
 end
 
 
 -- Network Recievs
 net.Receive("RequestSellCrop", function(len, ply)
-    print( "Message from " .. ply:Nick() .. " received. Its length is " .. len .. "." )
-
     local cropName = VGFarm.SmartNetCropRead()
     local inventory = PlayerInventories[ply]
 
@@ -210,8 +189,6 @@ net.Receive("RequestSellCrop", function(len, ply)
 end)
 
 net.Receive("RequestSellAllCrops", function(len, ply)
-    print( "Message from " .. ply:Nick() .. " received. Its length is " .. len .. "." )
-
     SVGFarm:SellAllCrops(ply)
 end)
 

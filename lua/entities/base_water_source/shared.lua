@@ -7,9 +7,18 @@ ENT.Spawnable = true -- Specifies whether this Entity can be spawned by players 
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 ENT.Model = "models/pot/pot.mdl"
-ENT.DefaultWaterLevel = 180
-ENT.MaxWaterLevel = 180
+ENT.DefaultWaterAmount = 180
+ENT.MaxWaterAmount = 180
+
+function ENT:UpdateWaterAmount(name, old, new)
+    self.WaterAmount = new
+    self:CalculateBarProgress(new)
+end
 
 function ENT:SetupDataTables()
-    self:NetworkVar("Int", 0, "WaterLevel")
+    self:NetworkVar("Int", 0, "WaterAmount")
+    
+    if CLIENT then
+        self:NetworkVarNotify("WaterAmount", self.UpdateWaterAmount)
+    end
 end

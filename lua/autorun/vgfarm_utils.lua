@@ -123,4 +123,14 @@ function VGFarmUtils.SmartNetFloatToIntRead()
     return NetReadUInt(smartBit) / 10
 end
 
+--prints the filepath and line it was called in with the text at the end
+function VGFarmUtils.SmartPrint(text)    
+    local info = debug.getinfo(2, "Sl")
+    print("[VGFarm] "..string.format("[%s:%d] %s", info.short_src, info.currentline, text))
+end
+
+function VGFarmUtils.CopyColorWithAlpha(base, alpha)
+    return Color(base.r, base.g, base.b, alpha)
+end
+
 return VGFarmUtils

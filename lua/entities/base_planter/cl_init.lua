@@ -1,8 +1,13 @@
 include("shared.lua")
 
-local fadeStart = 50
-local maxDrawDistance = 300
+surface.CreateFont("WaterText", {
+    font = "Tahoma",
+    size = 64,
+    weight = 50,
+    antialias = true
+})
 
+--Localized functions
 local Clamp = math.Clamp
 local Floor = math.floor
 local DrawColor = surface.SetDrawColor
@@ -10,56 +15,166 @@ local DrawRect = surface.DrawRect
 local DrawMaterial = surface.SetMaterial
 local DrawTexture = surface.DrawTexturedRect
 
+--info drawing distance and fade
+local fadeStart = 100
+local maxDrawDistance = 500
+
+--Water Level Drawing vars
 local size = 16
 local xOffset = -size/2
 local yOffset = size/2
-local waterColor = Color(0, 80, 255, alpha)
+local waterImageDrawYOffset = Vector(0, 0, 75)
 
-local function NoDraw(drawPos, drawAng) end
+local function NoWaterDraw() end
 
 function ENT:UpdateDrawWaterDelegate()
-    if self.frame >= 0 then
-        self.DrawWater = function(drawPos, drawAng)
-            render.SetMaterial(self.WaterLevelMaterial)
-            self.WaterLevelMaterial:SetInt("$frame", self.frame)
-            render.DrawQuadEasy(drawPos, drawAng, size, size, waterColor, 180)
-        end
-    else
-        self.DrawWater = NoDraw -- no-op
-        print("Removed Entity Water Level Rendering")
+    if self.frame < 0 then 
+        self.DrawWater = NoWaterDraw --makes the draw operation do nothing 
+        VGFarmUtils.SmartPrint("Removed Entity Water Level Rendering") 
+        return 
     end
+    
+    self.DrawWater = function(drawPos, drawAngle, drawNormal)
+        render.SetMaterial(self.WaterAmountMaterial)
+        self.WaterAmountMaterial:SetInt("$frame", self.frame)
+        local ang = drawAngle
+        ang:RotateAroundAxis(ang:Forward(), 90)
+        ang:RotateAroundAxis(ang:Right(), -90)
+
+        render.DrawQuadEasy(drawPos, drawNormal, size, size, self.waterColor, 180)
+
+        cam.Start3D2D(self:GetPos() + waterImageDrawYOffset , ang, 0.07)
+            draw.SimpleTextOutlined(self.frame + 1 / self.frames * 100 .."%", "WaterText", 0, 0, self.textColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 3, self.outlineColor)
+        cam.End3D2D()
+    end
+end
+
+
+local modelInfoScale = 0.07 --Used To scale the text and point placment on the x axis of the model
+local seedInfoDrawYOffset = Vector(0, 0, 50)
+
+--list of models with each one having it's own list of vectors
+local modelInfoDrawPoints = {}
+local modelPlantDrawPoints = {}
+
+--Generates points on the model based on its width and length, with the length being offset a little
+function ENT:GeneratePoints(model)
+    local modelMins, modelMaxs = self:GetModelBounds()
+
+    --width
+    local modelWidth = modelMaxs.y - modelMins.y 
+    local modelWidth2D = modelWidth / modelInfoScale
+    local modelHalfWidth2D = modelWidth2D / 2
+    local spacingWidth = modelWidth2D / math.min(self.SeedLimit, self.SeedInfoPerRow)
+
+    --length
+    local modelLength = modelMaxs.z - modelMins.z 
+    local modelLength2D = modelLength * 1.5 * (math.ceil(self.SeedLimit % 2) - 1.25) --change this line to make it perfectly devided or devided with an offset
+    local modelHalfLength2D = modelLength2D / 2
+    local spacingLength = modelLength2D / math.ceil(self.SeedLimit / self.SeedInfoPerRow)
+
+    modelInfoDrawPoints[model] = {}
+    modelPlantDrawPoints[model] = {}
+    
+    for i = 1, self.SeedLimit do
+        local rowIndex = math.ceil((i - 0.5) / self.SeedInfoPerRow)
+        local columbIndex = (i - 0.5) % self.SeedInfoPerRow
+
+        local xOffset = -modelHalfWidth2D + columbIndex * spacingWidth
+        local yOffset = math.floor((i - 1) / self.SeedInfoPerRow) --might want to review this line of code as I don't remember it's significants 
+        local zOffset = modelHalfLength2D - (rowIndex - 0.5) * spacingLength
+
+        modelInfoDrawPoints[model][i] = Vector(xOffset, yOffset, zOffset)
+        modelPlantDrawPoints[model][i] = {bottom = Vector(xOffset, 600, zOffset), top = Vector(xOffset, 0, zOffset)}
+    end
+    
+    VGFarmUtils.SmartPrint("Model Width Created for "..self:GetClass())
+end
+
+--Currently Not in Use But will be used to extract specific bone locations to create points
+function ENT:ExtractPointsFromModelBones(model) return false end
+
+function ENT:SetPoints()
+    local model = self:GetModel()
+
+    if modelInfoDrawPoints[model] then return end
+
+    if self:ExtractPointsFromModelBones(model) then return end
+
+    self:GeneratePoints(model)
 end
 
 function ENT:Initialize()
     self:UpdateDrawWaterDelegate()
-    print("Default Frame: "..self.DefaultFrame)
-    self.WaterLevelMaterial:SetInt("$frame", self.DefaultFrame)
+    self.frame = math.ceil(self.DefaultWaterAmount / self.MaxWaterAmount * self.frames) - 1
+    self.WaterAmountMaterial:SetInt("$frame", self.frame)
+    self:SetPoints()
+    self.waterColor = Color(0, 80, 255, 255)
+    self.textColor = Color(255, 255, 255, 255)
+    self.outlineColor = Color(0, 0, 0, 255)
+    --self.debbugBoxEnabled = false --holder code, might make it a toggle feature when a player wants to see an area
 end
+
+local function DrawSeedText(pos, ang, scale, drawPoints, seedLimit, textColor, outlineColor, toggleDrawLines, linePoints)
+    cam.Start3D2D(pos, ang, scale)
+        for i = 1, seedLimit do
+            local point = drawPoints[i]
+            draw.SimpleTextOutlined(
+                i, "WaterText",
+                point.x, point.y * 100,
+                textColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER,
+                3, outlineColor
+            )
+            if toggleDrawLines then render.DrawLine(linePoints[i].bottom, linePoints[i].top, textColor, true) end
+        end
+    cam.End3D2D()
+end
+
+function ENT:DrawGrowthInfo(drawPos, ang)
+    local drawPoints = modelInfoDrawPoints[self.Model]
+    local plantPoints = modelPlantDrawPoints[self.Model]
+
+    ang:RotateAroundAxis(ang:Forward(), 90)
+    ang:RotateAroundAxis(ang:Right(), -90)
+    DrawSeedText(drawPos, ang, modelInfoScale, drawPoints, self.SeedLimit, self.textColor, self.outlineColor, false)
+
+    ang:RotateAroundAxis(ang:Right(), 180)
+    DrawSeedText(drawPos, ang, modelInfoScale, drawPoints, self.SeedLimit, self.textColor, self.outlineColor, true, plantPoints)
+end
+
 
 function ENT:DrawTranslucent()
     self:DrawModel()
+    local model = self:GetModel()
 
     local ply = LocalPlayer()
     local pos = ply:GetPos()
     local dist = pos:Distance(self:GetPos())
-    -- if dist > maxDrawDistance then return end
+    if dist > maxDrawDistance or not modelInfoDrawPoints[model] then return end
     
-    -- local alpha = 255
-    -- if dist > fadeStart then
-    --     local frac = Clamp((maxDrawDistance / dist) / (dist / fadeStart), 0, 1)
-    --     alpha = alpha * frac
-    -- end
-    -- GRID DRAWING (on side of model)
+    local alpha = 255
+    if dist > fadeStart then
+        local frac = Clamp((maxDrawDistance / dist) / (dist / fadeStart), 0, 1)
+        alpha = alpha * frac
+    end
+
+    self.waterColor.a = alpha
+    self.textColor.a = alpha
+    self.outlineColor.a = alpha
     
-    local drawPos = self:GetPos() + self:GetUp() * 75 
-    local toEye = EyePos() - drawPos
-    local normal = toEye:GetNormalized()
+    local drawPos = self:GetPos()
+    local toEye = EyePos() - drawPos - waterImageDrawYOffset   
+    local toEyeAngle = toEye:Angle()
+    local toEyeNormal = toEye:GetNormalized()
     local ang = self:GetAngles()
 
-    self.DrawWater(drawPos, normal)
+    self.DrawWater(drawPos + waterImageDrawYOffset, toEyeAngle, toEyeNormal)
 
-    cam.Start3D2D(self:GetPos() + self:GetForward() * 50 , ang, 1)
-        VGFarmUtils.DrawBox(self.minHolderDetectionRange, self.maxHolderDetectionRange)
-    cam.End3D2D()
+    self:DrawGrowthInfo(drawPos + self:GetUp() * 52 , ang)
+
+    -- cam.Start3D2D(self:GetPos() + self:GetForward() * 50 , ang, 1)
+    --     VGFarmUtils.DrawBox(self.minHolderDetectionRange, self.maxHolderDetectionRange)
+    -- cam.End3D2D()
+
 end
 

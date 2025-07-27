@@ -1,0 +1,5 @@
+"VertexlitGeneric"
+{
+	"$basetexture" "planter_large/dirt"
+	"$bumpmap" "planter_large/dirt_bump"
+}

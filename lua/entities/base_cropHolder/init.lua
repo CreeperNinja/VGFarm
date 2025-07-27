@@ -5,8 +5,6 @@ include("shared.lua")
 AddCSLuaFile("sh_vgfarm.lua")
 local VGFarm = include("sh_vgfarm.lua")
 
-
--- This will be called on both the Client and Server realms
 function ENT:Initialize()
 	-- Ensure code for the Server realm does not accidentally run on the Client
     self:SetModel(self.Model) -- Sets the model for the Entity.
@@ -18,7 +16,6 @@ function ENT:Initialize()
         phys:Wake() -- Activates the physics object, making the Entity subject to physics (gravity, collisions, etc.).
     end
     self:SetUseType(SIMPLE_USE) -- or CONTINUOUS_USE if needed
-    print("Spawned Crop Entity")
     self.ReadyForCrops = false 
 end
 

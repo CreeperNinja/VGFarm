@@ -2,6 +2,7 @@ AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 include("shared.lua")
 
+--Collection of all planters that will have the growth and draining updates
 WaterDrainingEntities = {}
 
 function ENT:Initialize()
@@ -13,9 +14,7 @@ function ENT:Initialize()
     if phys:IsValid() then -- Checks if the physics object is valid.
         phys:Wake() -- Activates the physics object, making the Entity subject to physics (gravity, collisions, etc.).
     end
-    self:SetWaterLevel(self.DefaultWaterLevel)
-    print("Spawned Entity with water level: "..self.DefaultWaterLevel)
-
+    self:SetWaterAmount(self.DefaultWaterAmount)
 end
 
 --time it takes to update drain and growth in seconds (shorther time will send more net massages, while longer time will seem to be less responsive)
@@ -27,16 +26,17 @@ local drainAmount = 1
 local growthAmount = 5
 
 function ENT:IsInDrainingList()
-    if WaterDrainingEntities[self] then return true end
-    return false
+    return WaterDrainingEntities[self] ~= nil 
 end
 
 function ENT:AddToDrainingList()
     if not self:IsInDrainingList() then
         WaterDrainingEntities[self] = true 
+        VGFarmUtils.SmartPrint("Added "..self:GetClass().." To Drain Update")
     end
 end
 
+--Currently not in use
 function ENT:CanAddSeeds()
     if self.Seeds ~= nil and #self.Seeds >= self.SeedLimit then print("Pot Already Full") return false end
     print("Can Add Seeds")
@@ -50,20 +50,9 @@ end
 
 function ENT:AddSeeds(type, amount)
     for i = 1, amount do
-        print("Adding To ".. i)
         table.insert(self.Seeds, {seedType = type, growProgress = 0})
     end
     self:AddToDrainingList()
-    print("Added "..self:GetClass().." To Drain Update")
-end
-
-function ENT:SpawnCrop(entClass, amount, cropHolderEntity)
-    local crop = ents.Create("base_crop")
-    crop.CropHolder = entClass.CropClassName 
-    crop.CropAmount = amount
-    crop:SetPos(self:GetPos() + self:GetRight() + self:GetUp() * 30)
-    crop:Spawn()
-    crop:Activate()
 end
 
 function ENT:SpawnEmpyCropHolder()
@@ -78,7 +67,6 @@ function ENT:SpawnCrops(cropHashMap)
     local cropHolderEntity = VGFarmUtils.GetNearbyEntityInBox(self:GetPos() + self:GetForward() * 50, self.minHolderDetectionRange, self.maxHolderDetectionRange, "base_cropholder")
     if cropHolderEntity == nil then cropHolderEntity = self:SpawnEmpyCropHolder() end
     cropHolderEntity:AddCrops(cropHashMap)
-    print("Spawned And Added Crops")
 end
 
 function ENT:GrowSeeds(planter)
@@ -100,12 +88,10 @@ function ENT:GrowSeeds(planter)
             lastCheckedType = seed.seedType 
         end
 
-        print(seed.seedType.." "..seed.growProgress.." / "..seedENT.GrowTime)
-
         --check if seed is still growing
         if seed.growProgress < seedENT.GrowTime then continue end
 
-        --code when finished growing
+        --when finished growing add to crops spawn queue
         if not cropsToSpawn[seedENT.CropClassName] then 
             cropsToSpawn[seedENT.CropClassName] = 0 
             cropsToSpawnCount = cropsToSpawnCount + 1
@@ -118,6 +104,7 @@ function ENT:GrowSeeds(planter)
         self:SpawnCrops(cropsToSpawn)
     end
 
+    --removes from draining update when no more seeds are left
     if #self.Seeds <= 0 then WaterDrainingEntities[planter] = nil end
 end
 
@@ -126,21 +113,22 @@ timer.Create("DrainWater_Global", drainUpdateSpeed, 0, function()
 
     for planter, isDraining in pairs(WaterDrainingEntities) do
 
+        --if planter no longer exists, remove it from updates
         if not IsValid(planter) then
-            print("Removed Invalid Entity ".. planter)
             WaterDrainingEntities[planter] = nil
+            VGFarmUtils.SmartPrint("Removed Invalid Entity From Drain Update")
             continue
         end
 
-        local waterLevel = planter:GetWaterLevel()
-        waterLevel = waterLevel - drainAmount * drainSpeed
-        if waterLevel <= 0 then
-            waterLevel = 0
+        local WaterAmount = planter:GetWaterAmount()
+        WaterAmount = WaterAmount - drainAmount * drainSpeed
+        if WaterAmount <= 0 then
+            WaterAmount = 0
             WaterDrainingEntities[planter] = nil
-            print("Entity " .. planter:EntIndex() .. " finished draining.")
+            VGFarmUtils.SmartPrint("Entity " .. planter:EntIndex() .. " finished draining.")
         end
         planter:GrowSeeds(planter)
-        planter:SetWaterLevel(waterLevel)
+        planter:SetWaterAmount(WaterAmount)
     end
 
 end)
