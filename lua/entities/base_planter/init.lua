@@ -56,7 +56,7 @@ function ENT:AddSeeds(type, amount)
 end
 
 function ENT:SpawnEmpyCropHolder()
-    local crop = ents.Create("base_cropholder")
+    local crop = ents.Create("base_cropHolder")
     crop:SetPos(self:GetPos() + self:GetForward() * 50)
     crop:Spawn()
     crop:Activate()
