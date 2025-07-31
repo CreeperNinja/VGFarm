@@ -18,7 +18,7 @@ ENT.yGridOffset = 50
 
 --Seed
 ENT.DefaultSeedAmount = 5 -- default amount
-ENT.GrowTime = 10
+ENT.GrowTime = 280
 ENT.CropMinAmount = 1
 ENT.CropMaxAmount = 2
 ENT.SeedIcon = Material("icons/seedPacks/questionMarkIcon.png")

@@ -49,6 +49,34 @@ function ENT:UpdateDrawWaterDelegate()
     end
 end
 
+local function ResetSeedProgress()
+    VGFarmUtils.SmartPrint("Recieved Reset Growth Visuals")
+    local planter = net.ReadEntity()
+
+    for i = 1, planter.SeedLimit do
+        planter.Seeds[i] = 0
+    end
+end
+
+net.Receive("SendResetSeedProgressToClient", ResetSeedProgress)
+
+local function RecieveSeedGrowthProgressToClient()
+    VGFarmUtils.SmartPrint("Recieved Growth Info")
+    local entitiesCount = VGFarmUtils.SmartNetUIntRead()
+
+    for i = 1, entitiesCount do
+        local planter = net.ReadEntity()
+        local totalSeeds = VGFarmUtils.SmartNetUIntRead()
+
+        for x = 1, totalSeeds do
+            local seedKey = VGFarmUtils.SmartNetUIntRead()
+            local seedProgress = VGFarmUtils.SmartNetUIntRead()
+            planter.Seeds[seedKey] = seedProgress
+        end
+    end
+end
+
+net.Receive("SendSeedGrowthProgressToClient", RecieveSeedGrowthProgressToClient)
 
 local modelInfoScale = 0.07 --Used To scale the text and point placment on the x axis of the model
 local seedInfoDrawYOffset = Vector(0, 0, 50)
@@ -112,15 +140,19 @@ function ENT:Initialize()
     self.waterColor = Color(0, 80, 255, 255)
     self.textColor = Color(255, 255, 255, 255)
     self.outlineColor = Color(0, 0, 0, 255)
+
+    for i = 1, self.SeedLimit do
+        self.Seeds[i] = 0
+    end
     --self.debbugBoxEnabled = false --holder code, might make it a toggle feature when a player wants to see an area
 end
 
-local function DrawSeedText(pos, ang, scale, drawPoints, seedLimit, textColor, outlineColor, toggleDrawLines, linePoints)
+local function DrawSeedText(pos, ang, scale, drawPoints, seeds, seedLimit, textColor, outlineColor, toggleDrawLines, linePoints)
     cam.Start3D2D(pos, ang, scale)
         for i = 1, seedLimit do
             local point = drawPoints[i]
             draw.SimpleTextOutlined(
-                i, "WaterText",
+                seeds[i].."%", "WaterText",
                 point.x, point.y * 100,
                 textColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER,
                 3, outlineColor
@@ -136,10 +168,10 @@ function ENT:DrawGrowthInfo(drawPos, ang)
 
     ang:RotateAroundAxis(ang:Forward(), 90)
     ang:RotateAroundAxis(ang:Right(), -90)
-    DrawSeedText(drawPos, ang, modelInfoScale, drawPoints, self.SeedLimit, self.textColor, self.outlineColor, false)
+    DrawSeedText(drawPos, ang, modelInfoScale, drawPoints, self.Seeds, self.SeedLimit, self.textColor, self.outlineColor, false)
 
     ang:RotateAroundAxis(ang:Right(), 180)
-    DrawSeedText(drawPos, ang, modelInfoScale, drawPoints, self.SeedLimit, self.textColor, self.outlineColor, true, plantPoints)
+    DrawSeedText(drawPos, ang, modelInfoScale, drawPoints, self.Seeds, self.SeedLimit, self.textColor, self.outlineColor, true, plantPoints)
 end
 
 

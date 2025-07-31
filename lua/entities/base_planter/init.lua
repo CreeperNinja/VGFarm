@@ -4,6 +4,7 @@ include("shared.lua")
 
 --Collection of all planters that will have the growth and draining updates
 WaterDrainingEntities = {}
+WaterDrainingEntitiesCount = 0
 
 function ENT:Initialize()
     self:SetModel(self.Model) -- Sets the model for the Entity.
@@ -32,6 +33,7 @@ end
 function ENT:AddToDrainingList()
     if not self:IsInDrainingList() then
         WaterDrainingEntities[self] = true 
+        WaterDrainingEntitiesCount = WaterDrainingEntitiesCount + 1
         VGFarmUtils.SmartPrint("Added "..self:GetClass().." To Drain Update")
     end
 end
@@ -50,10 +52,12 @@ end
 
 function ENT:AddSeeds(type, amount)
     for i = 1, amount do
-        table.insert(self.Seeds, {seedType = type, growProgress = 0})
+        local newIndex = table.insert(self.Seeds, {seedType = type, growProgress = 0})
+        self.Seeds[newIndex].index = newIndex
     end
     self:AddToDrainingList()
 end
+
 
 function ENT:SpawnEmpyCropHolder()
     local crop = ents.Create("base_cropHolder")
@@ -63,59 +67,115 @@ function ENT:SpawnEmpyCropHolder()
     return crop
 end
 
+local function RemoveFromDraining(planter)
+    WaterDrainingEntities[planter] = nil
+    WaterDrainingEntitiesCount = WaterDrainingEntitiesCount - 1
+end
+
 function ENT:SpawnCrops(cropHashMap)
     local cropHolderEntity = VGFarmUtils.GetNearbyEntityInBox(self:GetPos() + self:GetForward() * 50, self.minHolderDetectionRange, self.maxHolderDetectionRange, "base_cropholder")
     if cropHolderEntity == nil then cropHolderEntity = self:SpawnEmpyCropHolder() end
     cropHolderEntity:AddCrops(cropHashMap)
 end
 
-function ENT:GrowSeeds(planter)
+function ENT:GrowSeeds(planterSeedsToUpdate)
     if #self.Seeds <= 0 then return end
-
+    
     --optimization
     local lastCheckedType = nil 
     local seedENT = nil 
     local cropsToSpawn = {}
     local cropsToSpawnCount = 0
 
-    --growth code
-    for key, seed in pairs(self.Seeds) do
-        seed.growProgress = seed.growProgress + growthAmount
+    --Internal
+    local totalSeeds = #self.Seeds
+    local seedCount = #self.Seeds
+
+    for i = 0, totalSeeds - 1 do
+        local key = totalSeeds - i
+        local seed = self.Seeds[key]
 
         --optimization
         if lastCheckedType ~= seed.seedType then
             seedENT = scripted_ents.Get(seed.seedType)
             lastCheckedType = seed.seedType 
         end
+        
+        seed.growProgress = seed.growProgress + growthAmount
 
-        --check if seed is still growing
-        if seed.growProgress < seedENT.GrowTime then continue end
+        --Finished Growing
+        if seed.growProgress >= seedENT.GrowTime then 
+            seedCount = seedCount - 1
+            
+            --adds to visual update
+            planterSeedsToUpdate.count = VGFarmUtils.TableSafeCreate(planterSeedsToUpdate.content, self, {}, planterSeedsToUpdate.count)
+            planterSeedsToUpdate.content[self][i + 1] = {0, key} --optianally use -1 to indicate not rendering
+            
+            --adds to crops spawn queue
+            cropsToSpawnCount = VGFarmUtils.TableSafeCreate(cropsToSpawn, seedENT.CropClassName, 0, cropsToSpawnCount)
+            cropsToSpawn[seedENT.CropClassName] = cropsToSpawn[seedENT.CropClassName] + seedENT:GetRandomCropAmount(self.IsFertelized)
 
-        --when finished growing add to crops spawn queue
-        if not cropsToSpawn[seedENT.CropClassName] then 
-            cropsToSpawn[seedENT.CropClassName] = 0 
-            cropsToSpawnCount = cropsToSpawnCount + 1
+            table.remove(self.Seeds, key)
+            continue 
         end
-        cropsToSpawn[seedENT.CropClassName] = cropsToSpawn[seedENT.CropClassName] + seedENT:GetRandomCropAmount(self.IsFertelized)
-        self.Seeds[key] = nil 
+
+        local previousGrowthPercent = math.floor(VGFarmUtils.GetPercent(seed.growProgress - growthAmount, seedENT.GrowTime))
+        local currentGrowthPercent = math.floor(VGFarmUtils.GetPercent(seed.growProgress, seedENT.GrowTime))
+        
+        --if the growth percent is the same, don't send an update
+        if previousGrowthPercent ~= currentGrowthPercent then
+            planterSeedsToUpdate.count = VGFarmUtils.TableSafeCreate(planterSeedsToUpdate.content, self, {}, planterSeedsToUpdate.count)
+            table.insert(planterSeedsToUpdate.content[self], {currentGrowthPercent, seed.index})
+        else
+            VGFarmUtils.SmartPrint(seed.seedType .." Skipped Growth Visual Update")
+        end
     end
 
-    if cropsToSpawnCount > 0 then
-        self:SpawnCrops(cropsToSpawn)
-    end
+    if cropsToSpawnCount > 0 then self:SpawnCrops(cropsToSpawn) end
 
-    --removes from draining update when no more seeds are left
-    if #self.Seeds <= 0 then WaterDrainingEntities[planter] = nil end
+    if seedCount > 0 then return end
+
+    VGFarmUtils.SmartPrint("No More Seeds Left To Grow")
+    RemoveFromDraining(self)
+    planterSeedsToUpdate.content[self] = nil
+    planterSeedsToUpdate.count = planterSeedsToUpdate.count - 1
+    self:ResetSeedProgress()
 end
 
+util.AddNetworkString("SendSeedGrowthProgressToClient")
+util.AddNetworkString("SendResetSeedProgressToClient")
+
+function ENT:ResetSeedProgress()
+    net.Start("SendResetSeedProgressToClient")
+    net.WriteEntity(self)
+    net.Broadcast()
+end
+
+local function SendSeedGrowthProgressToClient(planterSeedsToUpdate)
+    net.Start("SendSeedGrowthProgressToClient")
+    VGFarmUtils.SmartNetUIntWrite(planterSeedsToUpdate.count)
+
+    for planter, seeds in pairs(planterSeedsToUpdate.content) do
+        net.WriteEntity(planter)
+        VGFarmUtils.SmartNetUIntWrite(#seeds)
+        for key, seed in pairs(seeds) do
+            VGFarmUtils.SmartNetUIntWrite(seed[2])
+            VGFarmUtils.SmartNetUIntWrite(seed[1])
+        end
+    end
+    net.Broadcast()
+end
 
 timer.Create("DrainWater_Global", drainUpdateSpeed, 0, function()
 
+    if WaterDrainingEntitiesCount == 0 then return end
+    local planterSeedsToUpdate = {count = 0, content = {}}
+    
     for planter, isDraining in pairs(WaterDrainingEntities) do
 
         --if planter no longer exists, remove it from updates
         if not IsValid(planter) then
-            WaterDrainingEntities[planter] = nil
+            RemoveFromDraining(planter)
             VGFarmUtils.SmartPrint("Removed Invalid Entity From Drain Update")
             continue
         end
@@ -124,13 +184,15 @@ timer.Create("DrainWater_Global", drainUpdateSpeed, 0, function()
         WaterAmount = WaterAmount - drainAmount * drainSpeed
         if WaterAmount <= 0 then
             WaterAmount = 0
-            WaterDrainingEntities[planter] = nil
+            RemoveFromDraining(planter)
             VGFarmUtils.SmartPrint("Entity " .. planter:EntIndex() .. " finished draining.")
         end
-        planter:GrowSeeds(planter)
+        planter:GrowSeeds(planterSeedsToUpdate)
         planter:SetWaterAmount(WaterAmount)
     end
-
+    
+    if WaterDrainingEntitiesCount == 0 or planterSeedsToUpdate.count <= 0 then return end
+    SendSeedGrowthProgressToClient(planterSeedsToUpdate)
 end)
 
 

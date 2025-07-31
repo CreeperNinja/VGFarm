@@ -133,4 +133,16 @@ function VGFarmUtils.CopyColorWithAlpha(base, alpha)
     return Color(base.r, base.g, base.b, alpha)
 end
 
+function VGFarmUtils.GetPercent(num, max)
+    return num / max * 100
+end
+
+function VGFarmUtils.TableSafeCreate(tbl, key, value, optionalCounter)
+    if tbl[key] then return optionalCounter end
+
+    tbl[key] = value
+    if optionalCounter then optionalCounter = optionalCounter + 1 end
+    return optionalCounter
+end
+
 return VGFarmUtils

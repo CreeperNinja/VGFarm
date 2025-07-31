@@ -183,7 +183,6 @@ function PANEL:Paint(w, h)
 
     local x = xAxies + scaledXOffset + graphAreaX+ self.dotSize/2
 
-
 end
 
 function PANEL:SetCustomText(text)
