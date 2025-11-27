@@ -1,6 +1,0 @@
-"VertexlitGeneric"
-{
-	"$basetexture" "pot/soil"
-	"$bumpmap"     "pot/soil_normal"
-	"$normalmapalphaenvmapmask" 1
-}

@@ -38,8 +38,8 @@ function ENT:TouchedPlanter(ent)
 
     local usedAmount = planterNewAmount - planterAmount
     
-    if usedAmount < selfMax then
-        local newAmount = totalAdded - selfMax
+    local newAmount = selfAmount - usedAmount
+    if newAmount > 0 then
         self:SetWaterAmount(newAmount)
         return
     end

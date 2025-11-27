@@ -1,4 +1,11 @@
 "VertexlitGeneric"
 {
-	"$basetexture" "planter/dirt"
+	"$basetexture" "planter_medium/dirt"
+	"$bumpmap" "planter_medium/dirt_bump" 
+	"$normalmap" 
+
+	$phong 1
+    $phongboost 1
+    $phongexponenttexture "planter_medium/dirt_roughness"
+    $phongfresnelranges "[0.2 0.5 1]"
 }

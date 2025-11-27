@@ -1,0 +1,5 @@
+"UnlitGeneric"
+{
+	"$basetexture" "plant/leaf"
+	"$translucent" 1
+}

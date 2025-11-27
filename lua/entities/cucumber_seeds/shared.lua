@@ -13,3 +13,4 @@ ENT.MaxGridAmount = ENT.xGrid * ENT.yGrid
 ENT.MaxSeedAmount = ENT.MaxGridAmount * 2
 ENT.CropClassName = "Cucumbers"
 ENT.SeedIcon = Material("icons/seedPacks/cucumberIcon.png")
+ENT.GrowTime = 60

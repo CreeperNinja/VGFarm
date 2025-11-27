@@ -16,6 +16,8 @@ function ENT:Initialize()
         phys:Wake() -- Activates the physics object, making the Entity subject to physics (gravity, collisions, etc.).
     end
     self:SetWaterAmount(self.DefaultWaterAmount)
+    self:SetUseType(SIMPLE_USE)
+    self:CreateSeedInventory()
 end
 
 --time it takes to update drain and growth in seconds (shorther time will send more net massages, while longer time will seem to be less responsive)
@@ -25,6 +27,18 @@ local drainSpeed = 1
 local drainAmount = 1
 
 local growthAmount = 5
+
+
+function ENT:CreateSeedInventory()
+    for i = 1, self.SeedLimit do
+        self.Seeds[i] = nil 
+    end
+    self.UsedSeedSlots = 0
+end
+
+function ENT:ReturnAvailableSpace()
+    return self.SeedLimit - self.UsedSeedSlots
+end
 
 function ENT:IsInDrainingList()
     return WaterDrainingEntities[self] ~= nil 
@@ -38,26 +52,42 @@ function ENT:AddToDrainingList()
     end
 end
 
---Currently not in use
-function ENT:CanAddSeeds()
-    if self.Seeds ~= nil and #self.Seeds >= self.SeedLimit then print("Pot Already Full") return false end
-    print("Can Add Seeds")
-    return true
-end
-
-function ENT:ReturnAvailableSpace()
-    if self.Seeds == nil then print("Error") return 0 end
-    return self.SeedLimit - #self.Seeds
-end
-
 function ENT:AddSeeds(type, amount)
+    local lastFoundSlot = 1
     for i = 1, amount do
-        local newIndex = table.insert(self.Seeds, {seedType = type, growProgress = 0})
-        self.Seeds[newIndex].index = newIndex
+        local slot = self:FindFreeSlot(lastFoundSlot)
+        if not slot then lastFoundSlot = lastFoundSlot + 1 continue end
+
+        self.Seeds[slot] = {
+            seedType = type,
+            growProgress = 0
+        }
+        self.UsedSeedSlots = self.UsedSeedSlots + 1
+        lastFoundSlot = slot
     end
+
     self:AddToDrainingList()
 end
 
+function ENT:RemoveSeed(index)
+    self.Seeds[index] = nil 
+    self.UsedSeedSlots = self.UsedSeedSlots - 1
+end
+
+function ENT:FindFreeSlot(startingIndex)
+    for i = startingIndex or 1, self.SeedLimit do
+        if self.Seeds[i] == nil then return i end
+    end
+    return nil
+end
+
+function ENT:FindUsedSlot(startingIndex)
+    for i = startingIndex or 1, self.SeedLimit do
+        if self.Seeds[i] ~= nil then 
+            return i end
+    end
+    return nil
+end
 
 function ENT:SpawnEmpyCropHolder()
     local crop = ents.Create("base_cropHolder")
@@ -79,7 +109,7 @@ function ENT:SpawnCrops(cropHashMap)
 end
 
 function ENT:GrowSeeds(planterSeedsToUpdate)
-    if #self.Seeds <= 0 then return end
+    if self.UsedSeedSlots <= 0 then return end
     
     --optimization
     local lastCheckedType = nil 
@@ -88,11 +118,15 @@ function ENT:GrowSeeds(planterSeedsToUpdate)
     local cropsToSpawnCount = 0
 
     --Internal
-    local totalSeeds = #self.Seeds
-    local seedCount = #self.Seeds
+    local totalSeeds = self.UsedSeedSlots
+    local seedCount = self.UsedSeedSlots
+    local lastFoundSlot = 0
 
-    for i = 0, totalSeeds - 1 do
-        local key = totalSeeds - i
+    for i = 1, totalSeeds do
+        --Finding the First Empty Seed Slot
+        local slot = self:FindUsedSlot(lastFoundSlot + 1)
+
+        local key = slot
         local seed = self.Seeds[key]
 
         --optimization
@@ -102,33 +136,35 @@ function ENT:GrowSeeds(planterSeedsToUpdate)
         end
         
         seed.growProgress = seed.growProgress + growthAmount
-
         --Finished Growing
         if seed.growProgress >= seedENT.GrowTime then 
             seedCount = seedCount - 1
             
             --adds to visual update
             planterSeedsToUpdate.count = VGFarmUtils.TableSafeCreate(planterSeedsToUpdate.content, self, {}, planterSeedsToUpdate.count)
-            planterSeedsToUpdate.content[self][i + 1] = {0, key} --optianally use -1 to indicate not rendering
+            table.insert(planterSeedsToUpdate.content[self], {100, key})
             
             --adds to crops spawn queue
             cropsToSpawnCount = VGFarmUtils.TableSafeCreate(cropsToSpawn, seedENT.CropClassName, 0, cropsToSpawnCount)
             cropsToSpawn[seedENT.CropClassName] = cropsToSpawn[seedENT.CropClassName] + seedENT:GetRandomCropAmount(self.IsFertelized)
 
-            table.remove(self.Seeds, key)
+            self:RemoveSeed(key) 
+            lastFoundSlot = slot
             continue 
         end
 
         local previousGrowthPercent = math.floor(VGFarmUtils.GetPercent(seed.growProgress - growthAmount, seedENT.GrowTime))
         local currentGrowthPercent = math.floor(VGFarmUtils.GetPercent(seed.growProgress, seedENT.GrowTime))
         
-        --if the growth percent is the same, don't send an update
+        --Send Update only if growth percent changed
         if previousGrowthPercent ~= currentGrowthPercent then
             planterSeedsToUpdate.count = VGFarmUtils.TableSafeCreate(planterSeedsToUpdate.content, self, {}, planterSeedsToUpdate.count)
-            table.insert(planterSeedsToUpdate.content[self], {currentGrowthPercent, seed.index})
+            table.insert(planterSeedsToUpdate.content[self], {currentGrowthPercent, key})
         else
             VGFarmUtils.SmartPrint(seed.seedType .." Skipped Growth Visual Update")
         end
+        
+        lastFoundSlot = slot
     end
 
     if cropsToSpawnCount > 0 then self:SpawnCrops(cropsToSpawn) end
@@ -157,7 +193,9 @@ local function SendSeedGrowthProgressToClient(planterSeedsToUpdate)
 
     for planter, seeds in pairs(planterSeedsToUpdate.content) do
         net.WriteEntity(planter)
-        VGFarmUtils.SmartNetUIntWrite(#seeds)
+        VGFarmUtils.SmartPrint("Used Slots: "..#planterSeedsToUpdate.content[planter])
+        VGFarmUtils.SmartNetUIntWrite(#planterSeedsToUpdate.content[planter])
+        PrintTable(planterSeedsToUpdate.content[planter])
         for key, seed in pairs(seeds) do
             VGFarmUtils.SmartNetUIntWrite(seed[2])
             VGFarmUtils.SmartNetUIntWrite(seed[1])
@@ -194,5 +232,14 @@ timer.Create("DrainWater_Global", drainUpdateSpeed, 0, function()
     if WaterDrainingEntitiesCount == 0 or planterSeedsToUpdate.count <= 0 then return end
     SendSeedGrowthProgressToClient(planterSeedsToUpdate)
 end)
+
+
+function ENT:Use(activator, caller)
+    if not IsValid(activator) or not activator:IsPlayer() then return end
+    VGFarmUtils.SmartPrint("Table Seeds:")
+    PrintTable(self.Seeds)
+    local isDrainingTest = WaterDrainingEntities[self] ~= nil 
+    VGFarmUtils.SmartPrint(isDrainingTest)
+end
 
 

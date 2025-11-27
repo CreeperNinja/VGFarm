@@ -15,6 +15,10 @@ local DrawRect = surface.DrawRect
 local DrawMaterial = surface.SetMaterial
 local DrawTexture = surface.DrawTexturedRect
 
+--Plant Visuals
+local plantModelPath = "models/plant/plant.mdl"
+local plantTotalStages = 5
+
 --info drawing distance and fade
 local fadeStart = 100
 local maxDrawDistance = 500
@@ -25,7 +29,13 @@ local xOffset = -size/2
 local yOffset = size/2
 local waterImageDrawYOffset = Vector(0, 0, 75)
 
+--list of models with each one having it's own list of vectors
+local modelInfoDrawPoints = {}
+local modelPlantDrawPoints = {}
+local modelPlantLineDrawPoints = {}
+
 local function NoWaterDraw() end
+local function NoPlantDraw() end
 
 function ENT:UpdateDrawWaterDelegate()
     if self.frame < 0 then 
@@ -53,15 +63,16 @@ local function ResetSeedProgress()
     VGFarmUtils.SmartPrint("Recieved Reset Growth Visuals")
     local planter = net.ReadEntity()
 
-    for i = 1, planter.SeedLimit do
-        planter.Seeds[i] = 0
+    for plantIndex = 1, planter.SeedLimit do
+        planter.Seeds[plantIndex] = 0
+        planter.cachedPlantModelStages[plantIndex].drawToggle = false  
     end
 end
 
 net.Receive("SendResetSeedProgressToClient", ResetSeedProgress)
 
 local function RecieveSeedGrowthProgressToClient()
-    VGFarmUtils.SmartPrint("Recieved Growth Info")
+    VGFarmUtils.SmartPrint("Recieved Growth Info For Plants")
     local entitiesCount = VGFarmUtils.SmartNetUIntRead()
 
     for i = 1, entitiesCount do
@@ -70,8 +81,16 @@ local function RecieveSeedGrowthProgressToClient()
 
         for x = 1, totalSeeds do
             local seedKey = VGFarmUtils.SmartNetUIntRead()
-            local seedProgress = VGFarmUtils.SmartNetUIntRead()
-            planter.Seeds[seedKey] = seedProgress
+            local seedProgressPercent = VGFarmUtils.SmartNetUIntRead()
+            if seedProgressPercent >= 100 then 
+                VGFarmUtils.SmartPrint("Finished Growing Detected") 
+                planter.Seeds[seedKey] = 0
+                planter.cachedPlantModelStages[seedKey].drawToggle = false  
+                continue 
+            end
+            planter.Seeds[seedKey] = seedProgressPercent
+            VGFarmUtils.SmartPrint("Recieved Growth "..seedProgressPercent.."% for spot "..seedKey)
+            planter:SetPlantStage(seedKey, seedProgressPercent)
         end
     end
 end
@@ -81,9 +100,44 @@ net.Receive("SendSeedGrowthProgressToClient", RecieveSeedGrowthProgressToClient)
 local modelInfoScale = 0.07 --Used To scale the text and point placment on the x axis of the model
 local seedInfoDrawYOffset = Vector(0, 0, 50)
 
---list of models with each one having it's own list of vectors
-local modelInfoDrawPoints = {}
-local modelPlantDrawPoints = {}
+function ENT:GeneratePlantPoints(model)
+    local mins, maxs = self:GetModelBounds()
+
+    --internal padding values
+    local widthPadding = 0
+    local lengthPadding = 3
+
+    --Internal Offset values
+    local plantHeightOffset = 3
+
+    local width  = maxs.y - mins.y - widthPadding
+    local length = maxs.x - mins.x - lengthPadding
+    local height = maxs.z - mins.z
+    VGFarmUtils.SmartPrint("Model Height: "..height)
+
+    local perRow = math.min(self.SeedLimit, self.SeedInfoPerRow)
+    local totalRows = math.ceil(self.SeedLimit / self.SeedInfoPerRow)
+
+    local spacingY = width / perRow
+    local spacingX = length / totalRows
+
+    local halfCols = (perRow - 1) / 2
+    local halfRows = (totalRows - 1) / 2
+    local halfHeight = height / 2
+
+    modelPlantDrawPoints[model] = {}
+
+    for i = 1, self.SeedLimit do
+        local col = (i - 1) % perRow
+        local row = math.floor((i - 1) / perRow)
+
+        local posX = (row - halfRows) * spacingX
+        local posY = (col - halfCols) * spacingY
+        local posZ = halfHeight - plantHeightOffset
+
+        modelPlantDrawPoints[model][i] = Vector(posX, posY, posZ)
+    end
+end
 
 --Generates points on the model based on its width and length, with the length being offset a little
 function ENT:GeneratePoints(model)
@@ -102,7 +156,7 @@ function ENT:GeneratePoints(model)
     local spacingLength = modelLength2D / math.ceil(self.SeedLimit / self.SeedInfoPerRow)
 
     modelInfoDrawPoints[model] = {}
-    modelPlantDrawPoints[model] = {}
+    modelPlantLineDrawPoints[model] = {}
     
     for i = 1, self.SeedLimit do
         local rowIndex = math.ceil((i - 0.5) / self.SeedInfoPerRow)
@@ -112,8 +166,11 @@ function ENT:GeneratePoints(model)
         local yOffset = math.floor((i - 1) / self.SeedInfoPerRow) --might want to review this line of code as I don't remember it's significants 
         local zOffset = modelHalfLength2D - (rowIndex - 0.5) * spacingLength
 
+        local plantX = modelHalfLength2D - (rowIndex - 0.5) * modelInfoScale
+        local plantZ = modelLength / 2 + (rowIndex - 0.5) * spacingLength
+
         modelInfoDrawPoints[model][i] = Vector(xOffset, yOffset, zOffset)
-        modelPlantDrawPoints[model][i] = {bottom = Vector(xOffset, 600, zOffset), top = Vector(xOffset, 0, zOffset)}
+        modelPlantLineDrawPoints[model][i] = {bottom = Vector(xOffset, 600, zOffset), top = Vector(xOffset, 0, zOffset)}
     end
     
     VGFarmUtils.SmartPrint("Model Width Created for "..self:GetClass())
@@ -130,6 +187,19 @@ function ENT:SetPoints()
     if self:ExtractPointsFromModelBones(model) then return end
 
     self:GeneratePoints(model)
+    self:GeneratePlantPoints(model)
+end
+
+function ENT:BuildPlantModels(modelPath)
+    self.plantModels = {} -- store separate model instances
+    self.cachedPlantModelStages = {} -- stores last cached model stage
+
+    for i = 1, self.SeedLimit do
+        local plant = ClientsideModel(modelPath, RENDERGROUP_OPAQUE)
+        plant:SetNoDraw(true) -- you will draw manually in Draw()
+        self.plantModels[i] = plant
+        self.cachedPlantModelStages[i] = {stage = plantTotalStages, drawToggle = false}
+    end
 end
 
 function ENT:Initialize()
@@ -141,13 +211,15 @@ function ENT:Initialize()
     self.textColor = Color(255, 255, 255, 255)
     self.outlineColor = Color(0, 0, 0, 255)
 
+    self:BuildPlantModels(plantModelPath)
     for i = 1, self.SeedLimit do
         self.Seeds[i] = 0
     end
     --self.debbugBoxEnabled = false --holder code, might make it a toggle feature when a player wants to see an area
 end
 
-local function DrawSeedText(pos, ang, scale, drawPoints, seeds, seedLimit, textColor, outlineColor, toggleDrawLines, linePoints)
+
+local function DrawSeedText(pos, ang, scale, drawPoints, seeds, seedLimit, textColor, outlineColor, toggleDrawLines, linePoints, plantModel)
     cam.Start3D2D(pos, ang, scale)
         for i = 1, seedLimit do
             local point = drawPoints[i]
@@ -157,28 +229,66 @@ local function DrawSeedText(pos, ang, scale, drawPoints, seeds, seedLimit, textC
                 textColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER,
                 3, outlineColor
             )
-            if toggleDrawLines then render.DrawLine(linePoints[i].bottom, linePoints[i].top, textColor, true) end
+            if toggleDrawLines then 
+                render.DrawLine(linePoints[i].bottom, linePoints[i].top, textColor, true) 
+            end
         end
     cam.End3D2D()
 end
 
 function ENT:DrawGrowthInfo(drawPos, ang)
     local drawPoints = modelInfoDrawPoints[self.Model]
-    local plantPoints = modelPlantDrawPoints[self.Model]
+    local plantPoints = modelPlantLineDrawPoints[self.Model]
 
     ang:RotateAroundAxis(ang:Forward(), 90)
     ang:RotateAroundAxis(ang:Right(), -90)
     DrawSeedText(drawPos, ang, modelInfoScale, drawPoints, self.Seeds, self.SeedLimit, self.textColor, self.outlineColor, false)
 
     ang:RotateAroundAxis(ang:Right(), 180)
-    DrawSeedText(drawPos, ang, modelInfoScale, drawPoints, self.Seeds, self.SeedLimit, self.textColor, self.outlineColor, true, plantPoints)
+    DrawSeedText(drawPos, ang, modelInfoScale, drawPoints, self.Seeds, self.SeedLimit, self.textColor, self.outlineColor, true, plantPoints, self.plantModel)
+end
+
+function ENT:SetPlantStage(plantIndex, seedProgressPercent)
+    local stage = math.floor(seedProgressPercent / (100 / plantTotalStages))
+
+    if not self.cachedPlantModelStages[plantIndex].drawToggle then 
+        VGFarmUtils.SmartPrint("Toggled plant draw on in spot "..plantIndex.." (Toggled)")
+        self.cachedPlantModelStages[plantIndex].drawToggle = true 
+    end
+
+    --Early Exit if Plant Stage Is Repeated
+    if self.cachedPlantModelStages[plantIndex].stage == stage then return end
+
+    self.plantModels[plantIndex]:SetBodygroup(1, stage)
+    self.cachedPlantModelStages[plantIndex].stage = stage
+end
+
+function ENT:PlantDraw(model)
+    local points = modelPlantDrawPoints[model]
+    if not self.plantModels then return end
+
+    for plantIndex = 1, self.SeedLimit do
+        --Optional optimization: have a list of only turned on plants
+        if not self.cachedPlantModelStages[plantIndex].drawToggle then continue end
+
+        local plant = self.plantModels[plantIndex]
+        local localPos = points[plantIndex]
+
+        if plant and localPos then
+            -- Transform the local offset & rotation into world space
+            plant:SetPos(self:LocalToWorld(localPos))
+            plant:SetAngles(self:LocalToWorldAngles(Angle(0, 0, 0))) -- replace with offset if needed
+            
+            plant:DrawModel()
+        end
+    end
 end
 
 
 function ENT:DrawTranslucent()
     self:DrawModel()
     local model = self:GetModel()
-
+    
     local ply = LocalPlayer()
     local pos = ply:GetPos()
     local dist = pos:Distance(self:GetPos())
@@ -200,13 +310,17 @@ function ENT:DrawTranslucent()
     local toEyeNormal = toEye:GetNormalized()
     local ang = self:GetAngles()
 
+    self:PlantDraw(model)
+
     self.DrawWater(drawPos + waterImageDrawYOffset, toEyeAngle, toEyeNormal)
 
     self:DrawGrowthInfo(drawPos + self:GetUp() * 52 , ang)
 
-    -- cam.Start3D2D(self:GetPos() + self:GetForward() * 50 , ang, 1)
-    --     VGFarmUtils.DrawBox(self.minHolderDetectionRange, self.maxHolderDetectionRange)
-    -- cam.End3D2D()
+end
 
+function ENT:OnRemove()
+    if IsValid(self.plantModels) then
+        self.plantModels:Remove()
+    end
 end
 
