@@ -15,14 +15,13 @@ local Broadcast = net.Broadcast
 //Holds inventory data of all the players
 local PlayerInventories = {} -- Start with an empty table
 
-//Bit Size For Sending int values
-local intBit = 16
-
-local eachMarketSize = VGFarm.EachMarketSize
+local eachMarketSize = VGFarmConfig.eachMarketSize
 
 //Data used for UI and pricing in this format ["Name"] {priceValue1, priceValue2, priceValue3...}
 local markets = VGFarm.CropMarkets
 local totalMarkets = table.Count(markets)
+
+local lastSavedUpdateFrequency = VGFarmConfig.marketUpdateFrequency
 
 //Network Strings
 util.AddNetworkString("RequestSellCrop")
@@ -206,10 +205,18 @@ hook.Add("PlayerDisconnected", "CleanupPositionCache", function(ply)
 end)
 
 -- Timers
-// Update Market Values every minute
-timer.Create("UpdateMarketDataEveryMinute", VGFarm.marketUpdateFrequency, 0, function()
+local function UpdateMarket()
+    local marketUpdateFrequency = VGFarmConfig.marketUpdateFrequency
+    if lastSavedUpdateFrequency ~= marketUpdateFrequency then
+        lastSavedUpdateFrequency = marketUpdateFrequency
+        timer.Adjust("UpdateMarketData", marketUpdateFrequency, 0, UpdateMarket)
+        return 
+    end
     ReplaceEachOldMarketDataValue(1, 100)    
     SendNewMarketValuesToAll()
-end)
+end
+
+-- Update Market Values
+timer.Create("UpdateMarketData", VGFarmConfig.marketUpdateFrequency, 0, UpdateMarket)
 
 return SVGFarm

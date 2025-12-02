@@ -5,28 +5,7 @@ local random = math.random
 
 local CurrentGamemode = engine.ActiveGamemode()
 
-print("Running Mode: "..CurrentGamemode)
-
 local VGFarm = {}
-
-VGFarm.MaxCropPriceMultiplier = 10
-
-VGFarm.CropValueChangeMultiplier = 0.5
-
-//How freuquent the market updates are in seconds
-VGFarm.marketUpdateFrequency = 5
-
-//min 2, 1 for effect and another for value
-VGFarm.EachMarketSize = 20
-
-VGFarm.ItemPurchaseLimit = 
-{
-    { name = "planter_small",      limit = 1},
-    { name = "planter_medium",      limit = 1},
-    { name = "planter_large",      limit = 1},
-}
-
-VGFarm.LoadPlayerInventoryFromDatabase = false 
 
 VGFarm.Crops =
 {
@@ -44,10 +23,10 @@ VGFarm.Crops =
 
 local function GenerateCropMarket(crop)
     local market = {}
-    for i = 1, VGFarm.EachMarketSize - 1 do
+    for i = 1, VGFarmConfig.eachMarketSize - 1 do
         market[i] = 0
     end
-    market[VGFarm.EachMarketSize] = crop.baseMarketPrice
+    market[VGFarmConfig.eachMarketSize] = crop.baseMarketPrice
     return market
 end
 
@@ -61,8 +40,11 @@ VGFarm.CropBitEncoder = VGFarmUtils.GetOptimizedBitSize(#VGFarm.Crops)
 
 VGFarm.CropMarkets = {}
 
+VGFarm.CropMarketsCount = 0
+
 for key, crop in ipairs(VGFarm.Crops) do
     VGFarm.CropMarkets[crop.name] = GenerateCropMarket(crop)
+    VGFarm.CropMarketsCount = VGFarm.CropMarketsCount + 1
 end
 
 --Strictly used to write crop info efficiently
@@ -77,20 +59,18 @@ end
 
 local function CreateNewCropPrice(oldValue, cropBasePrice)
     local changeDirection = random(-1, 1)
-    return oldValue + cropBasePrice * (VGFarm.CropValueChangeMultiplier * changeDirection)
+    return oldValue + cropBasePrice * (VGFarmConfig.marketMultiplierChange * changeDirection)
 end
 
 function VGFarm.CreateNewCropValue(cropName, oldValue)
     local cropBasePrice = VGFarm.Crops[VGFarm.CropsIDs[cropName]].baseMarketPrice
     local newPrice = CreateNewCropPrice(oldValue, cropBasePrice)
 
-    local maxPrice = cropBasePrice * VGFarm.MaxCropPriceMultiplier
+    local maxPrice = cropBasePrice * VGFarmConfig.maxMarketMultiplier
     if newPrice <= cropBasePrice or newPrice >= maxPrice then 
-        --print("\r\n["..cropName.."] Recalculated New Price Because Current Price Is: "..newPrice)
         newPrice = CreateNewCropPrice(oldValue, cropBasePrice) 
-        --print("New Price "..newPrice.."\r\n")
     end
-    return math.Clamp(newPrice, cropBasePrice, cropBasePrice * VGFarm.MaxCropPriceMultiplier)
+    return math.Clamp(newPrice, cropBasePrice, cropBasePrice * VGFarmConfig.maxMarketMultiplier)
 end
 
 function VGFarm.AddMoney(ply, amount)
