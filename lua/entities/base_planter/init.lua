@@ -20,13 +20,7 @@ function ENT:Initialize()
     self:CreateSeedInventory()
 end
 
---time it takes to update drain and growth in seconds (shorther time will send more net massages, while longer time will seem to be less responsive)
-local drainUpdateSpeed = 5
-
-local drainSpeed = 1
-local drainAmount = 1
-
-local growthAmount = 5
+local lastSavedPlanterUpdateSpeed = VGFarmConfig.planterUpdateSpeed
 
 
 function ENT:CreateSeedInventory()
@@ -135,7 +129,7 @@ function ENT:GrowSeeds(planterSeedsToUpdate)
             lastCheckedType = seed.seedType 
         end
         
-        seed.growProgress = seed.growProgress + growthAmount
+        seed.growProgress = seed.growProgress + VGFarmConfig.plantGrowthAmount * VGFarmConfig.planterUpdateSpeed
         --Finished Growing
         if seed.growProgress >= seedENT.GrowTime then 
             seedCount = seedCount - 1
@@ -153,7 +147,7 @@ function ENT:GrowSeeds(planterSeedsToUpdate)
             continue 
         end
 
-        local previousGrowthPercent = math.floor(VGFarmUtils.GetPercent(seed.growProgress - growthAmount, seedENT.GrowTime))
+        local previousGrowthPercent = math.floor(VGFarmUtils.GetPercent(seed.growProgress - VGFarmConfig.plantGrowthAmount * VGFarmConfig.planterUpdateSpeed, seedENT.GrowTime))
         local currentGrowthPercent = math.floor(VGFarmUtils.GetPercent(seed.growProgress, seedENT.GrowTime))
         
         --Send Update only if growth percent changed
@@ -204,8 +198,12 @@ local function SendSeedGrowthProgressToClient(planterSeedsToUpdate)
     net.Broadcast()
 end
 
-timer.Create("DrainWater_Global", drainUpdateSpeed, 0, function()
-
+local function RunPlanterLogicOnAll() 
+    if lastSavedPlanterUpdateSpeed ~= planterUpdateSpeed then
+        lastSavedPlanterUpdateSpeed = planterUpdateSpeed
+        timer.Adjust("PlanterLogic_Global", VGFarmConfig.planterUpdateSpeed, 0, RunPlanterLogicOnAll)
+        return
+    end
     if WaterDrainingEntitiesCount == 0 then return end
     local planterSeedsToUpdate = {count = 0, content = {}}
     
@@ -219,7 +217,7 @@ timer.Create("DrainWater_Global", drainUpdateSpeed, 0, function()
         end
 
         local WaterAmount = planter:GetWaterAmount()
-        WaterAmount = WaterAmount - drainAmount * drainSpeed
+        WaterAmount = WaterAmount - VGFarmConfig.waterDrainAmount * VGFarmConfig.planterUpdateSpeed
         if WaterAmount <= 0 then
             WaterAmount = 0
             RemoveFromDraining(planter)
@@ -231,8 +229,9 @@ timer.Create("DrainWater_Global", drainUpdateSpeed, 0, function()
     
     if WaterDrainingEntitiesCount == 0 or planterSeedsToUpdate.count <= 0 then return end
     SendSeedGrowthProgressToClient(planterSeedsToUpdate)
-end)
+end
 
+timer.Create("PlanterLogic_Global", VGFarmConfig.planterUpdateSpeed, 0, RunPlanterLogicOnAll)
 
 function ENT:Use(activator, caller)
     if not IsValid(activator) or not activator:IsPlayer() then return end

@@ -19,7 +19,7 @@ local eachMarketSize = VGFarmConfig.eachMarketSize
 
 //Data used for UI and pricing in this format ["Name"] {priceValue1, priceValue2, priceValue3...}
 local markets = VGFarm.CropMarkets
-local totalMarkets = table.Count(markets)
+local totalMarkets = VGFarm.CropMarketsCount
 
 local lastSavedUpdateFrequency = VGFarmConfig.marketUpdateFrequency
 

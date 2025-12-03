@@ -1,5 +1,10 @@
 VGFarmConfig = VGFArmConfig or {}
 
+--Planter
+VGFarmConfig.planterUpdateSpeed = 5 --The Speed in Seconds Which The Planter Growth, Drain And Network Massages Are Sent (Growth And Drain Speed Is Multiplied By The Update Speed Internally)
+VGFarmConfig.waterDrainAmount = 1 --Amount Of Water That Is Drained From The Planter Times The Update Speed
+VGFarmConfig.plantGrowthAmount = 1--Amount Of Growth That A Plant Recieves Times The Update Speed
+
 --Market
 VGFarmConfig.marketUpdateFrequency = 20 --How Many Seconds It Takes For The Market To Change
 VGFarmConfig.maxMarketMultiplier = 10 --Max Price From A base Amount --> (10 mult) base 2$ = max 20$
