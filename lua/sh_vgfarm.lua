@@ -7,7 +7,7 @@ local CurrentGamemode = engine.ActiveGamemode()
 
 local VGFarm = {}
 
-VGFarm.Crops =
+VGFarm.Crops = VGFarmConfig.Crops or --Default
 {
     { name = "Carrots",      baseMarketPrice = 1},
     { name = "Potatos",      baseMarketPrice = 2},
