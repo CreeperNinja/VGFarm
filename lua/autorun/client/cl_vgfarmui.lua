@@ -25,7 +25,6 @@ local FILL = FILL
 //Data
 local markets = VGFarm.CropMarkets
 local eachMarketSize = VGFarmConfig.eachMarketSize
-local maxMarketMultiplier = VGFarmConfig.maxMarketMultiplier
 local totalMarkets = VGFarm.CropMarketsCount
 local VGFarmPlayer = VGFarmPlayer
 
@@ -203,7 +202,7 @@ local function CreateWindow()
 
    //Creates The graph Part
    local marketGraph = ReturnNewDockedUIElement("MGraph", FILL, emptyMargin, emptySize, firstCrop, false , graphUIFrame)
-   marketGraph:SetMaxMarketValue(VGFarm.Crops[VGFarm.CropsIDs[firstCrop]].baseMarketPrice * maxMarketMultiplier)
+   marketGraph:SetMaxMarketValue(VGFarm.Crops[VGFarm.CropsIDs[firstCrop]].baseMarketPrice * VGFarmConfig.maxMarketMultiplier)
    marketGraph:SetMarketData(markets[firstCrop])
 
    //Assign function for each tab
@@ -211,7 +210,7 @@ local function CreateWindow()
       local cropName = VGFarm.Crops[key].name
       value.DoClick = function()
          marketGraph:SetCustomText(cropName)
-         marketGraph:SetMaxMarketValue(VGFarm.Crops[VGFarm.CropsIDs[cropName]].baseMarketPrice * maxMarketMultiplier)
+         marketGraph:SetMaxMarketValue(VGFarm.Crops[VGFarm.CropsIDs[cropName]].baseMarketPrice * VGFarmConfig.maxMarketMultiplier)
          marketGraph:SetMarketData(markets[cropName])
       end
    end
