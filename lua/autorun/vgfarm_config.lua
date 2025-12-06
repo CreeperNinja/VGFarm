@@ -11,7 +11,7 @@ VGFarmConfig.maxMarketMultiplier = 10 --Max Price From A base Amount --> (10 mul
 VGFarmConfig.marketMultiplierChange = 0.5 --The Price Change Each Market Update (Can Go Up, Down, Or Stay The Same)
 VGFarmConfig.eachMarketSize = 20 --Min 2 Required --> 1 is always used to make a line to the y axis and another is needed to display a value on the grid (Requires Server Restart)
 
-VGFarmConfig.Crops =
+VGFarmConfig.Crops = --(Requires Server Restart)
 {
     { name = "Carrots",      baseMarketPrice = 1},
     { name = "Potatos",      baseMarketPrice = 2},
