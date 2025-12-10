@@ -15,12 +15,12 @@ function VGFarmPlayer:GetPlayerFarmInventory()
 end
 
 local function SetPlayerData()
-    local count = net.ReadUInt(4)
+    -- local count = net.ReadUInt(4)
 
-    for i = 1, count do
-        local cropName = VGFarm.CropTypes[net.ReadUInt(4)]
-        VGFarmPlayer.Inventory[cropName] = 0
-    end
+    -- for i = 1, count do
+    --     local cropName = VGFarm.CropTypes[net.ReadUInt(4)]
+    --     VGFarmPlayer.Inventory[cropName] = 0
+    -- end
 end
 
 local function ResetInventory()

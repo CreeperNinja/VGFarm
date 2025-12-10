@@ -13,7 +13,7 @@ local Send = net.Send
 local Broadcast = net.Broadcast
 
 //Holds inventory data of all the players
-local PlayerInventories = {} -- Start with an empty table
+local PlayerInventories = PlayerInventories or {} -- Start with an empty table
 
 local eachMarketSize = VGFarmConfig.eachMarketSize
 
@@ -105,11 +105,8 @@ function SVGFarm:AddCropToPlayerInventory(ply, cropName, amount)
     print("Added To Inventory Now Player Has "..PlayerInventories[ply][cropName].." "..cropName)
 
     NetStart("SendPlayerInventoryCrop")
-    WriteUInt(VGFarm.CropsIDs[cropName], VGFarm.CropBitEncoder)
-
-    local smartBit = VGFarmUtils.GetOptimizedBitSize(cropAmount)
-    VGFarmUtils.SmartNetBitWrite(smartBit)
-    WriteUInt(PlayerInventories[ply][cropName], smartBit)
+    VGFarm.SmartNetCropWrite(cropName)
+    VGFarmUtils.SmartNetUIntWrite(cropAmount)
 
     Send(ply)
 end
