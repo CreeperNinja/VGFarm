@@ -10,7 +10,7 @@ ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 ENT.Model = "models/pot/pot.mdl"
 
 --Water Amount
-ENT.DefaultWaterAmount = 1
+ENT.DefaultWaterAmount = 0
 ENT.MaxWaterAmount = 180
 
 --Water Amount Visuals

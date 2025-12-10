@@ -3,12 +3,12 @@ ENT.Base = "base_gmodentity" -- Specifies that this Entity is based on the 'base
 ENT.PrintName = "Base Water Source" -- The name that will appear in the spawn menu.
 ENT.Author = "Void" -- The author's name for this Entity.
 ENT.Category = "VGFarm" -- The category for this Entity in the spawn menu.
-ENT.Spawnable = true -- Specifies whether this Entity can be spawned by players in the spawn menu.
+ENT.Spawnable = false  -- Specifies whether this Entity can be spawned by players in the spawn menu.
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 ENT.Model = "models/pot/pot.mdl"
-ENT.DefaultWaterAmount = 180
-ENT.MaxWaterAmount = 180
+ENT.DefaultWaterAmount = 0
+ENT.MaxWaterAmount = 0
 
 function ENT:UpdateWaterAmount(name, old, new)
     self.WaterAmount = new

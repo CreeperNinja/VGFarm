@@ -5,7 +5,7 @@ local random = math.random
 
 local CurrentGamemode = engine.ActiveGamemode()
 
-local VGFarm = {}
+local VGFarm = VGFarm or {}
 
 VGFarm.Crops = VGFarmConfig.Crops or --Default
 {

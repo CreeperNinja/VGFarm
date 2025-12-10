@@ -6,13 +6,16 @@ ENT.Category = "VGFarm" -- The category for this Entity in the spawn menu.
 ENT.Spawnable = true -- Specifies whether this Entity can be spawned by players in the spawn menu.
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
-ENT.DefaultSeedAmount = 7 -- default amount
+--Pack
 ENT.xGrid = 7
 ENT.yGrid = 4
 ENT.MaxGridAmount = ENT.xGrid * ENT.yGrid
 ENT.MaxSeedAmount = ENT.MaxGridAmount * 2
-ENT.GrowTime = 5
-ENT.CropClassName = "Carrots"
-ENT.CropAmount = 2
-ENT.CropMaxAmount = 4
 ENT.SeedIcon = Material("icons/seedPacks/carrotIcon.png")
+ENT.DefaultSeedAmount = 7 -- default amount
+
+--Seed
+ENT.GrowTime = 220
+ENT.CropClassName = "Carrots"
+ENT.CropAmount = 1
+ENT.CropMaxAmount = 4

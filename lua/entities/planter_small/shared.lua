@@ -7,3 +7,6 @@ ENT.Spawnable = true -- Specifies whether this Entity can be spawned by players 
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 ENT.SeedLimit = 1
+
+--Water Amount
+ENT.MaxWaterAmount = 200

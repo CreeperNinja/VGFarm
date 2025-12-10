@@ -15,16 +15,14 @@ ENT.yGrid = 4
 ENT.MaxGridAmount = ENT.xGrid * ENT.yGrid
 ENT.MaxSeedAmount = ENT.MaxGridAmount * 2
 ENT.yGridOffset = 50
+ENT.SeedIcon = Material("icons/seedPacks/questionMarkIcon.png")
+ENT.DefaultSeedAmount = 5 -- default amount
 
 --Seed
-ENT.DefaultSeedAmount = 5 -- default amount
 ENT.GrowTime = 280
+ENT.CropClassName = "base_crop" --the crop nane that this seed will produce
 ENT.CropMinAmount = 1
 ENT.CropMaxAmount = 2
-ENT.SeedIcon = Material("icons/seedPacks/questionMarkIcon.png")
-
---Crop - the crop nane that this seed will produce
-ENT.CropClassName = "base_crop"
 
 local print = print
 local Clamp = math.Clamp
