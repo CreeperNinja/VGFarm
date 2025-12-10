@@ -12,7 +12,7 @@ VGFarm.Crops = VGFarmConfig.Crops or --Default
     { name = "Carrots",      baseMarketPrice = 1},
     { name = "Potatos",      baseMarketPrice = 2},
     { name = "Cucumbers",    baseMarketPrice = 3},
-    { name = "Tomatoes",     baseMarketPrice = 4},
+    { name = "Garlics",      baseMarketPrice = 4},
     { name = "Lettuce",      baseMarketPrice = 5},
     { name = "Onions",       baseMarketPrice = 6},
     { name = "Beets",        baseMarketPrice = 7},

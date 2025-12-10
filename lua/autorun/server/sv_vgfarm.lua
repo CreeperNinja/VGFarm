@@ -77,15 +77,15 @@ local function SetInitialPlayerInventory(ply)
     
     //Sends Data To Client if True
     if VGFarm.LoadPlayerInventoryFromDatabase then
-        net.Start("SendPlayerData")
-        WriteUInt(#VGFarm.Crops, 4)
+        -- net.Start("SendPlayerData")
+        -- WriteUInt(#VGFarm.Crops, 4)
 
-        for key, crop in ipairs(VGFarm.Crops) do
-            PlayerInventories[ply][crop.name] = 0
-            WriteUInt(VGFarm.CropsIDs[crop.name], 4)
-        end
+        -- for key, crop in ipairs(VGFarm.Crops) do
+        --     PlayerInventories[ply][crop.name] = 0
+        --     WriteUInt(VGFarm.CropsIDs[crop.name], 4)
+        -- end
 
-        Send(ply)
+        -- Send(ply)
         print("[Warning] Currently Not Actually Uses DB values to send data, sends 0's to all types")
         return -- Avoids running default setup below
     end
