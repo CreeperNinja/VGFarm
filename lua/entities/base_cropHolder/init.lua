@@ -17,6 +17,7 @@ function ENT:Initialize()
     end
     self:SetUseType(SIMPLE_USE) -- or CONTINUOUS_USE if needed
     self.ReadyForCrops = false 
+    self:SetBodygroup(1, 1)
 end
 
 util.AddNetworkString("ClientReadyForCrops")

@@ -7,7 +7,7 @@ ENT.Spawnable = false   -- Specifies whether this Entity can be spawned by playe
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 --Model
-ENT.Model = "models/pot/pot.mdl"
+ENT.Model = "models/planter_small/planter_small.mdl"
 
 --Water Amount
 ENT.DefaultWaterAmount = 0
