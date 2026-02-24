@@ -4,8 +4,9 @@ ENT.PrintName = "Large Water" -- The name that will appear in the spawn menu.
 ENT.Author = "Void" -- The author's name for this Entity.
 ENT.Category = "VGFarm" -- The category for this Entity in the spawn menu.
 ENT.Spawnable = true -- Specifies whether this Entity can be spawned by players in the spawn menu.
+ENT.AdminSpawnable = true
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
-ENT.Model = "models/pot/pot.mdl"
+ENT.Model = "models/water_large/water_large.mdl"
 ENT.DefaultWaterAmount = 7200
 ENT.MaxWaterAmount = 7200

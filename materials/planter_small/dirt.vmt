@@ -1,0 +1,10 @@
+"VertexlitGeneric"
+{
+	"$basetexture" "planter_small/planter_small_dirt"
+	"$bumpmap" "planter_small/planter_small_dirt_normal"
+	
+    "$phong" "1"
+	"$phongexponenttexture" "planter_small/planter_small_dirt_roughness"
+    "$phongboost" "1"
+    "$phongfresnelranges" "[0 0.25 0.5]"
+}

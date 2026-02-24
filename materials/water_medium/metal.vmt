@@ -1,0 +1,10 @@
+"VertexlitGeneric"
+{
+	"$basetexture" "water_medium/water_medium_bucket"
+	"$bumpmap" "water_medium/water_medium_bucket_normal"
+	
+    "$phong" "1"
+    "$phongexponent" "5"
+    "$phongboost" "3"
+    "$phongfresnelranges" "[0 1 2]"
+}

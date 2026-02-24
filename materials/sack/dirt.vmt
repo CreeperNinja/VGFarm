@@ -1,0 +1,10 @@
+"VertexlitGeneric"
+{
+	"$basetexture" "sack/dirt"
+	"$bumpmap" "sack/dirt_normal"
+
+    "$phong" "1"
+    "$phongexponent" "150"
+    "$phongboost" "1"
+    "$phongfresnelranges" "[0 0.5 1]"
+}

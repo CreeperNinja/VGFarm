@@ -207,7 +207,7 @@ function ENT:Initialize()
     self.frame = math.ceil(self.DefaultWaterAmount / self.MaxWaterAmount * self.frames) - 1
     self.WaterAmountMaterial:SetInt("$frame", self.frame)
     self:SetPoints()
-    self.waterColor = Color(0, 80, 255, 255)
+    self.waterColor = Color(25, 150, 225)
     self.textColor = Color(255, 255, 255, 255)
     self.outlineColor = Color(0, 0, 0, 255)
 
