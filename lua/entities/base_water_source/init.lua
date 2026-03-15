@@ -15,8 +15,35 @@ function ENT:Initialize()
     if phys:IsValid() then -- Checks if the physics object is valid.
         phys:Wake() -- Activates the physics object, making the Entity subject to physics (gravity, collisions, etc.).
     end
-    self:SetWaterAmount(self.DefaultWaterAmount)
+    self:SharedInitialize()
+end
 
+function ENT:TouchedWater(ent)
+    if ent:GetClass() ~= self:GetClass() then return end
+    
+    local selfAmount = self:GetWaterAmount()
+    local selfMax = self.MaxWaterAmount
+    local entAmount = ent:GetWaterAmount()
+    local entMax = ent.MaxWaterAmount
+    
+    --If The Other Water Source Has No Remaining Water OR Water Is Already Full Then Skip 
+    if entAmount <= 0 or selfAmount == selfMax then print("One Of The Entities Has Skipped Water Calculation") return end
+    
+    -- Prevent both entities from trying to merge at the same time - only the newer one will merge into the older
+    if self:EntIndex() > ent:EntIndex() then print("One Of The Entities Has Disabled It's Merge Behaviour") return end
+    
+    local total = selfAmount + entAmount
+    
+    local newAmount = math.min(total, selfMax)
+    self:SetWaterAmount(newAmount)
+    
+    if total > selfMax then
+        local entNewAmount = total - selfMax
+        ent:SetWaterAmount(entNewAmount)
+    else
+        ent:SetWaterAmount(0)
+        ent:Remove() -- Absorbed completely
+    end
 end
 
 local planterClass = "base_planter"
@@ -50,5 +77,6 @@ end
 
 --Move Water Amount to planter
 function ENT:StartTouch(ent)
+    self:TouchedWater(ent)
     self:TouchedPlanter(ent)   
 end

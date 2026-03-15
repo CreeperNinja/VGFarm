@@ -7,4 +7,7 @@ ENT.Spawnable = true  -- Specifies whether this Entity can be spawned by players
 ENT.RenderGroup = RENDERGROUP_OPAQUE
 
 ENT.Model = "models/sack/sack.mdl"
-ENT.Crops = {}
+
+function ENT:SetupDataTables()
+    self:NetworkVar("Int", 0, "DirtAmount")
+end

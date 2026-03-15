@@ -4,6 +4,7 @@ include("shared.lua")
 
 AddCSLuaFile("sh_vgfarm.lua")
 local VGFarm = include("sh_vgfarm.lua")
+local min = math.min
 
 function ENT:Initialize()
     self:SetModel(self.Model) -- Sets the model for the Entity.
@@ -14,10 +15,43 @@ function ENT:Initialize()
     if phys:IsValid() then -- Checks if the physics object is valid.
         phys:Wake() -- Activates the physics object, making the Entity subject to physics (gravity, collisions, etc.).
     end
+    self:SetDirtAmount(VGFarmConfig.DefaultDirtAmount)
     self:SetUseType(SIMPLE_USE) -- or CONTINUOUS_USE if needed
 end
 
 function ENT:Use(activator, caller)
     if not IsValid(activator) or not activator:IsPlayer() then return end
-    VGFarmUtils.SmartPrint("Dirt Is Working")
+    VGFarmUtils.SmartPrint(self:GetDirtAmount().." Dirt")
+end
+
+local planterClass = "base_planter"
+function ENT:TouchedPlanter(ent)    
+    if not VGFarmUtils.IsDirectChildOrSame(ent, planterClass) then return end
+    
+    local selfDirtAmount = self:GetDirtAmount()
+    local planterDirtAmount = ent:GetDirtAmount()
+    local planterMaxDirtAmount = ent.SeedLimit
+    
+    --If planter is full then stop interaction
+    if planterDirtAmount >= planterMaxDirtAmount then print("Soiling skipped") return end
+
+    local totalAdded = selfDirtAmount + planterDirtAmount
+    local planterNewAmount = min(totalAdded, planterMaxDirtAmount)
+
+    ent:SetDirtAmount(planterNewAmount)
+
+    local usedAmount = planterNewAmount - planterDirtAmount
+    
+    local newAmount = selfDirtAmount - usedAmount
+    if newAmount > 0 then
+        self:SetDirtAmount(newAmount)
+        return
+    end
+    self:SetDirtAmount(0)
+    self:Remove() -- Absorbed completely
+end
+
+--Move Water Amount to planter
+function ENT:StartTouch(ent)
+    self:TouchedPlanter(ent)   
 end

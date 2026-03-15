@@ -25,6 +25,7 @@ local WaterAmountDrawOffsetZ = 30
 local WaterLevelBone = nil 
 
 function ENT:Initialize()
+    self:SharedInitialize()
     self:CalculateBarProgress(self:GetWaterAmount())
 
     WaterLevelBone = self:LookupBone("WaterLevelB")

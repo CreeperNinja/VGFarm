@@ -15,13 +15,13 @@ function ENT:Initialize()
     if phys:IsValid() then -- Checks if the physics object is valid.
         phys:Wake() -- Activates the physics object, making the Entity subject to physics (gravity, collisions, etc.).
     end
-    self:SetWaterAmount(self.DefaultWaterAmount)
+    self:SharedInitialize()
+    self:SetDirtAmount(self.DefaultDirtAmount)
     self:SetUseType(SIMPLE_USE)
     self:CreateSeedInventory()
 end
 
 local lastSavedPlanterUpdateSpeed = VGFarmConfig.planterUpdateSpeed
-
 
 function ENT:CreateSeedInventory()
     for i = 1, self.SeedLimit do
@@ -161,6 +161,11 @@ function ENT:GrowSeeds(planterSeedsToUpdate)
         lastFoundSlot = slot
     end
 
+    if totalSeeds ~= seedCount then
+        local newDirtAmount = totalSeeds - (totalSeeds - seedCount)
+        self:SetDirtAmount(newDirtAmount)
+    end
+
     if cropsToSpawnCount > 0 then self:SpawnCrops(cropsToSpawn) end
 
     if seedCount > 0 then return end
@@ -235,8 +240,6 @@ timer.Create("PlanterLogic_Global", VGFarmConfig.planterUpdateSpeed, 0, RunPlant
 
 function ENT:Use(activator, caller)
     if not IsValid(activator) or not activator:IsPlayer() then return end
-    VGFarmUtils.SmartPrint("Table Seeds:")
-    PrintTable(self.Seeds)
     local isDrainingTest = WaterDrainingEntities[self] ~= nil 
     VGFarmUtils.SmartPrint(isDrainingTest)
 end

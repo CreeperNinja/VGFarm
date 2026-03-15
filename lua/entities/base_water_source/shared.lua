@@ -7,8 +7,8 @@ ENT.Spawnable = false  -- Specifies whether this Entity can be spawned by player
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 ENT.Model = "models/pot/pot.mdl"
-ENT.DefaultWaterAmount = 0
-ENT.MaxWaterAmount = 0
+ENT.DefaultWaterAmount = 100
+ENT.MaxWaterAmount = 100
 
 function ENT:UpdateWaterAmount(name, old, new)
     self.WaterAmount = new
@@ -20,5 +20,15 @@ function ENT:SetupDataTables()
     
     if CLIENT then
         self:NetworkVarNotify("WaterAmount", self.UpdateWaterAmount)
+    end
+end
+
+function ENT:SharedInitialize()
+    local configSettings = VGFarmConfig.Water[self:GetClass()]
+    if not configSettings then return end
+    self.MaxWaterAmount = configSettings.MaxWaterAmount 
+
+    if SERVER then
+        self:SetWaterAmount(configSettings.DefaultWaterAmount)
     end
 end

@@ -1,9 +1,26 @@
 VGFarmConfig = VGFArmConfig or {}
 
---Planter
+--Growth
 VGFarmConfig.planterUpdateSpeed = 5 --The Speed in Seconds Which The Planter Growth, Drain And Network Massages Are Sent (Growth And Drain Speed Is Multiplied By The Update Speed Internally)
-VGFarmConfig.waterDrainAmount = 1 --Amount Of Water That Is Drained From The Planter Times The Update Speed
-VGFarmConfig.plantGrowthAmount = 1--Amount Of Growth That A Plant Recieves Times The Update Speed
+VGFarmConfig.waterDrainAmount = 1 --Amount Of Water That Is Drained From The Planter Times The Update Speed for each crop (if a crop uses 1 water per second and a planter has 6 crops, it will use 6 water per second)
+VGFarmConfig.plantGrowthAmount = 5--Amount Of Growth That A Plant Recieves Times The Update Speed (the growth progress that each crop experiences)
+
+--Dirt Bag
+VGFarmConfig.DefaultDirtAmount = 18 --each crop harvest consumes a single dirt
+
+--Planters
+VGFarmConfig.Planter = {
+    planter_large = {MaxWaterAmount = 1200},
+    planter_medium = {MaxWaterAmount = 600},
+    planter_small = {MaxWaterAmount = 200},
+}
+
+--Waters
+VGFarmConfig.Water = {
+    water_large = {DefaultWaterAmount = 7200, MaxWaterAmount = 7200},
+    water_medium = {DefaultWaterAmount = 3600, MaxWaterAmount = 3600},
+    water_small = {DefaultWaterAmount = 1200, MaxWaterAmount = 1200},
+}
 
 --Market
 VGFarmConfig.marketUpdateFrequency = 20 --How Many Seconds It Takes For The Market To Change
