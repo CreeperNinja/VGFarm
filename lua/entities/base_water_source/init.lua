@@ -4,6 +4,18 @@ include("shared.lua")
 
 local min = math.min
 
+sound.Add({
+    name = "Water.Used",
+    channel = CHAN_STATIC,
+    volume = 1.0,
+    level = 65,
+    pitch = {95,105},
+    sound = {
+        "water/water1.ogg",
+        "water/water2.ogg"
+    }
+})
+
 -- This will be called on both the Client and Server realms
 function ENT:Initialize()
 	-- Ensure code for the Server realm does not accidentally run on the Client
@@ -62,6 +74,7 @@ function ENT:TouchedPlanter(ent)
     local planterNewAmount = min(totalAdded, planterMax)
 
     ent:SetWaterAmount(planterNewAmount)
+    ent:EmitSound("Water.Used")
 
     local usedAmount = planterNewAmount - planterAmount
     

@@ -6,6 +6,18 @@ include("shared.lua")
 WaterDrainingEntities = {}
 WaterDrainingEntitiesCount = 0
 
+sound.Add({
+    name = "Plant.Grown",
+    channel = CHAN_STATIC,
+    volume = 1.0,
+    level = 65,
+    pitch = {95,105},
+    sound = {
+        "plant/plant1.ogg",
+        "plant/plant2.ogg"
+    }
+})
+
 function ENT:Initialize()
     self:SetModel(self.Model) -- Sets the model for the Entity.
     self:PhysicsInit( SOLID_VPHYSICS ) -- Initializes physics for the Entity, making it solid and interactable.
@@ -100,6 +112,8 @@ function ENT:SpawnCrops(cropHashMap)
     local cropHolderEntity = VGFarmUtils.GetNearbyEntityInBox(self:GetPos() + self:GetForward() * 50, self.minHolderDetectionRange, self.maxHolderDetectionRange, "base_cropholder")
     if cropHolderEntity == nil then cropHolderEntity = self:SpawnEmpyCropHolder() end
     cropHolderEntity:AddCrops(cropHashMap)
+    self:EmitSound("Plant.Grown")
+
 end
 
 function ENT:GrowSeeds(planterSeedsToUpdate)

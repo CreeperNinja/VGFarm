@@ -7,6 +7,22 @@ local print = print
 local Clamp = math.Clamp
 local random = math.random
 
+sound.Add({
+    name = "Seed.Used",
+    channel = CHAN_STATIC,
+    volume = 1.0,
+    level = 65,
+    pitch = {95,105},
+    sound = {
+        "seed/seed1.ogg",
+        "seed/seed2.ogg",
+        "seed/seed3.ogg",
+        "seed/seed4.ogg",
+        "seed/seed5.ogg",
+        "seed/seed6.ogg"
+    }
+})
+
 function ENT:Initialize()
     self:SetSeedAmount(self.DefaultSeedAmount)
     self:SetModel(self.Model) -- Sets the model for the Entity.
@@ -63,7 +79,6 @@ function ENT:TouchedPlanter(ent)
     local seedAmount = self:GetSeedAmount()
     local newSeedAmount = seedAmount - validSpace
 
-
     if newSeedAmount <= 0 then 
         ent:AddSeeds(self:GetClass(), seedAmount)
         VGFarmUtils.SmartPrint("Removed Seed Pack")
@@ -74,6 +89,7 @@ function ENT:TouchedPlanter(ent)
     if validSpace > 0 then
         ent:AddSeeds(self:GetClass(), availableSpace)
         self:SetSeedAmount(newSeedAmount)
+        ent:EmitSound("Seed.Used")
     end
 end
 

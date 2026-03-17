@@ -6,6 +6,18 @@ AddCSLuaFile("sh_vgfarm.lua")
 local VGFarm = include("sh_vgfarm.lua")
 local min = math.min
 
+sound.Add({
+    name = "Dirt.Used",
+    channel = CHAN_STATIC,
+    volume = 1.0,
+    level = 65,
+    pitch = {95,105},
+    sound = {
+        "dirt/dirt1.ogg",
+        "dirt/dirt2.ogg"
+    }
+})
+
 function ENT:Initialize()
     self:SetModel(self.Model) -- Sets the model for the Entity.
     self:PhysicsInit( SOLID_VPHYSICS ) -- Initializes physics for the Entity, making it solid and interactable.
@@ -39,6 +51,7 @@ function ENT:TouchedPlanter(ent)
     local planterNewAmount = min(totalAdded, planterMaxDirtAmount)
 
     ent:SetDirtAmount(planterNewAmount)
+    ent:EmitSound("Dirt.Used")
 
     local usedAmount = planterNewAmount - planterDirtAmount
     

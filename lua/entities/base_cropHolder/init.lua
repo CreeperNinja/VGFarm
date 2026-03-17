@@ -5,6 +5,18 @@ include("shared.lua")
 AddCSLuaFile("sh_vgfarm.lua")
 local VGFarm = include("sh_vgfarm.lua")
 
+sound.Add({
+    name = "Bag.Used",
+    channel = CHAN_STATIC,
+    volume = 1.0,
+    level = 65,
+    pitch = {95,105},
+    sound = {
+        "bag/used1.ogg",
+        "bag/used2.ogg"
+    }
+})
+
 function ENT:Initialize()
 	-- Ensure code for the Server realm does not accidentally run on the Client
     self:SetModel(self.Model) -- Sets the model for the Entity.
@@ -45,6 +57,7 @@ end
 function ENT:Use(activator, caller)
     if not IsValid(activator) or not activator:IsPlayer() then return end
     SVGFarm:AddCropsToPlayerInventory(activator, self.Crops)
+    self:EmitSound("Bag.Used")
     self:Remove()
 end
 

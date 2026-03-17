@@ -7,7 +7,7 @@
 - [ ] Water level radial UI - turn to mask the UV instead of having 100 frames
 
 # Features
-- [ ] Sound effects
+- [X] Sound effects
 - [X] Functional dirt bag
 - [X] Dynamic growth visuals for each plant type
 - [X] Move all basic entity settings to the config file
