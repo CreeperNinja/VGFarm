@@ -203,6 +203,7 @@ function ENT:BuildPlantModels(modelPath)
 end
 
 function ENT:Initialize()
+    self:SharedInitialize()
     self:UpdateDrawWaterDelegate()
     self.frame = math.ceil(self.DefaultWaterAmount / self.MaxWaterAmount * self.frames) - 1
     self.WaterAmountMaterial:SetInt("$frame", self.frame)
@@ -250,17 +251,17 @@ end
 
 function ENT:SetPlantStage(plantIndex, seedProgressPercent)
     local stage = math.floor(seedProgressPercent / (100 / plantTotalStages))
+    
+    --Early Exit if Plant Stage Is Repeated
+    if self.cachedPlantModelStages[plantIndex].stage == stage then return end
+
+    self.plantModels[plantIndex]:SetBodygroup(0, stage)
+    self.cachedPlantModelStages[plantIndex].stage = stage
 
     if not self.cachedPlantModelStages[plantIndex].drawToggle then 
         VGFarmUtils.SmartPrint("Toggled plant draw on in spot "..plantIndex.." (Toggled)")
         self.cachedPlantModelStages[plantIndex].drawToggle = true 
     end
-
-    --Early Exit if Plant Stage Is Repeated
-    if self.cachedPlantModelStages[plantIndex].stage == stage then return end
-
-    self.plantModels[plantIndex]:SetBodygroup(1, stage)
-    self.cachedPlantModelStages[plantIndex].stage = stage
 end
 
 function ENT:PlantDraw(model)

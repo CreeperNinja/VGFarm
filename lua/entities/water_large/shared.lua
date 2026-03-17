@@ -8,5 +8,3 @@ ENT.AdminSpawnable = true
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 ENT.Model = "models/water_large/water_large.mdl"
-ENT.DefaultWaterAmount = 7200
-ENT.MaxWaterAmount = 7200

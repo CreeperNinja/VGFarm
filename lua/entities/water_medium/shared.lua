@@ -7,5 +7,3 @@ ENT.Spawnable = true -- Specifies whether this Entity can be spawned by players 
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 ENT.Model = "models/water_medium/water_medium.mdl"
-ENT.DefaultWaterAmount = 3600
-ENT.MaxWaterAmount = 3600

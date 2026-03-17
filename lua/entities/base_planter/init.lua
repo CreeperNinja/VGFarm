@@ -6,6 +6,18 @@ include("shared.lua")
 WaterDrainingEntities = {}
 WaterDrainingEntitiesCount = 0
 
+sound.Add({
+    name = "Plant.Grown",
+    channel = CHAN_STATIC,
+    volume = 1.0,
+    level = 65,
+    pitch = {95,105},
+    sound = {
+        "plant/plant1.ogg",
+        "plant/plant2.ogg"
+    }
+})
+
 function ENT:Initialize()
     self:SetModel(self.Model) -- Sets the model for the Entity.
     self:PhysicsInit( SOLID_VPHYSICS ) -- Initializes physics for the Entity, making it solid and interactable.
@@ -15,13 +27,13 @@ function ENT:Initialize()
     if phys:IsValid() then -- Checks if the physics object is valid.
         phys:Wake() -- Activates the physics object, making the Entity subject to physics (gravity, collisions, etc.).
     end
-    self:SetWaterAmount(self.DefaultWaterAmount)
+    self:SharedInitialize()
+    self:SetDirtAmount(self.DefaultDirtAmount)
     self:SetUseType(SIMPLE_USE)
     self:CreateSeedInventory()
 end
 
 local lastSavedPlanterUpdateSpeed = VGFarmConfig.planterUpdateSpeed
-
 
 function ENT:CreateSeedInventory()
     for i = 1, self.SeedLimit do
@@ -100,6 +112,8 @@ function ENT:SpawnCrops(cropHashMap)
     local cropHolderEntity = VGFarmUtils.GetNearbyEntityInBox(self:GetPos() + self:GetForward() * 50, self.minHolderDetectionRange, self.maxHolderDetectionRange, "base_cropholder")
     if cropHolderEntity == nil then cropHolderEntity = self:SpawnEmpyCropHolder() end
     cropHolderEntity:AddCrops(cropHashMap)
+    self:EmitSound("Plant.Grown")
+
 end
 
 function ENT:GrowSeeds(planterSeedsToUpdate)
@@ -159,6 +173,11 @@ function ENT:GrowSeeds(planterSeedsToUpdate)
         end
         
         lastFoundSlot = slot
+    end
+
+    if totalSeeds ~= seedCount then
+        local newDirtAmount = totalSeeds - (totalSeeds - seedCount)
+        self:SetDirtAmount(newDirtAmount)
     end
 
     if cropsToSpawnCount > 0 then self:SpawnCrops(cropsToSpawn) end
@@ -235,8 +254,6 @@ timer.Create("PlanterLogic_Global", VGFarmConfig.planterUpdateSpeed, 0, RunPlant
 
 function ENT:Use(activator, caller)
     if not IsValid(activator) or not activator:IsPlayer() then return end
-    VGFarmUtils.SmartPrint("Table Seeds:")
-    PrintTable(self.Seeds)
     local isDrainingTest = WaterDrainingEntities[self] ~= nil 
     VGFarmUtils.SmartPrint(isDrainingTest)
 end

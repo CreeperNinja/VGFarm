@@ -23,6 +23,7 @@ ENT.WaterAmountMaterial = Material("animatedtextures/circle_256px_100frames/circ
 ENT.SeedLimit = 1
 ENT.Seeds = {}
 ENT.IsFertelized = true  
+ENT.DefaultDirtAmount = 0
 ENT.minHolderDetectionRange = Vector(40, 40, 20)
 ENT.maxHolderDetectionRange = Vector(-30, -40, -10)
 
@@ -33,6 +34,16 @@ ENT.SeedInfoPerRow = 3
 function ENT:UpdateFrame(name, old, new) 
     self.frame = math.ceil(new / self.MaxWaterAmount * self.frames) - 1
     self:UpdateDrawWaterDelegate()
+end
+
+--Updates Water Amount Image Frame
+function ENT:UpdateDirtVisual(name, old, new) 
+    if old == 0 and new > 0 then
+        self:SetBodygroup(1, 1)
+        
+    elseif old > 0 and new == 0 then
+        self:SetBodygroup(1, 0)
+    end
 end
 
 --Adds Planter To Draining Cycle if eligible 
@@ -46,12 +57,19 @@ end
 --Netwrok Vars / Notifiers
 function ENT:SetupDataTables()
     self:NetworkVar("Int", 0, "WaterAmount")
+    self:NetworkVar("Int", 1, "DirtAmount")
 
     if CLIENT then
         self:NetworkVarNotify("WaterAmount", self.UpdateFrame)
+        self:NetworkVarNotify("DirtAmount", self.UpdateDirtVisual)
     end
 
     if SERVER then
         self:NetworkVarNotify("WaterAmount", self.UpdateDraining)
     end
+end
+
+function ENT:SharedInitialize()
+    local configSettings = VGFarmConfig.Planter[self:GetClass()]
+    self.MaxWaterAmount = configSettings.MaxWaterAmount or 180
 end
