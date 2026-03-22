@@ -1,5 +1,6 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
+AddCSLuaFile("modules/RadialProgressBar.lua")
 include("shared.lua")
 
 --Collection of all planters that will have the growth and draining updates

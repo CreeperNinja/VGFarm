@@ -1,4 +1,5 @@
 include("shared.lua")
+local RadialProgressBar = include("modules/RadialProgressBar.lua")
 
 surface.CreateFont("WaterText", {
     font = "Tahoma",
@@ -19,42 +20,40 @@ local DrawTexture = surface.DrawTexturedRect
 local plantModelPath = "models/plant/plant.mdl"
 local plantTotalStages = 5
 
---info drawing distance and fade
-local fadeStart = 100
-local maxDrawDistance = 500
-
 --Water Level Drawing vars
-local size = 16
-local xOffset = -size/2
-local yOffset = size/2
-local waterImageDrawYOffset = Vector(0, 0, 75)
+local waterBarRadius = 150
+local waterImageDrawYOffset = Vector(0, 0, waterBarRadius/2)
 
 --list of models with each one having it's own list of vectors
 local modelInfoDrawPoints = {}
 local modelPlantDrawPoints = {}
 local modelPlantLineDrawPoints = {}
 
+local modelInfoScale = 0.07 --Used To scale the text and point placment on the x axis of the model
+local seedInfoDrawYOffset = Vector(0, 0, 50)
+
+local textAllign = TEXT_ALIGN_CENTER
+
 local function NoWaterDraw() end
 local function NoPlantDraw() end
 
-function ENT:UpdateDrawWaterDelegate()
-    if self.frame < 0 then 
+function ENT:UpdateDrawWaterDelegate(progressFloat)
+    if progressFloat <= 0 then 
         self.DrawWater = NoWaterDraw --makes the draw operation do nothing 
         VGFarmUtils.SmartPrint("Removed Entity Water Level Rendering") 
         return 
     end
     
-    self.DrawWater = function(drawPos, drawAngle, drawNormal)
-        render.SetMaterial(self.WaterAmountMaterial)
-        self.WaterAmountMaterial:SetInt("$frame", self.frame)
-        local ang = drawAngle
-        ang:RotateAroundAxis(ang:Forward(), 90)
-        ang:RotateAroundAxis(ang:Right(), -90)
+    --if water bar doesn't exist, create it
+    if not self.waterBar then self.waterBar = RadialProgressBar:New(waterBarRadius, progressFloat, self.waterColor) end
 
-        render.DrawQuadEasy(drawPos, drawNormal, size, size, self.waterColor, 180)
+    self.waterBar:BuildUVs(waterBarRadius, progressFloat)
 
-        cam.Start3D2D(self:GetPos() + waterImageDrawYOffset , ang, 0.07)
-            draw.SimpleTextOutlined(self.frame + 1 / self.frames * 100 .."%", "WaterText", 0, 0, self.textColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 3, self.outlineColor)
+    self.DrawWater = function(drawPos, drawAng)
+        local percent = string.format("%.1f%%", progressFloat * 100)
+        cam.Start3D2D(drawPos , drawAng, modelInfoScale)
+            self.waterBar:ExternalDraw()
+            draw.SimpleTextOutlined(percent, "DirtTextFont", 0, 0, self.textColor, textAllign, textAllign, 3, self.outlineColor)
         cam.End3D2D()
     end
 end
@@ -97,8 +96,6 @@ end
 
 net.Receive("SendSeedGrowthProgressToClient", RecieveSeedGrowthProgressToClient)
 
-local modelInfoScale = 0.07 --Used To scale the text and point placment on the x axis of the model
-local seedInfoDrawYOffset = Vector(0, 0, 50)
 
 function ENT:GeneratePlantPoints(model)
     local mins, maxs = self:GetModelBounds()
@@ -202,15 +199,17 @@ function ENT:BuildPlantModels(modelPath)
     end
 end
 
+function ENT:SetColors()
+    self.waterColor = Color(VGFarmClientConfig.WaterBarColor.r, VGFarmClientConfig.WaterBarColor.g, VGFarmClientConfig.WaterBarColor.b, 255)
+    self.textColor = Color(VGFarmClientConfig.TextColor.r, VGFarmClientConfig.TextColor.g, VGFarmClientConfig.TextColor.b, 255)
+    self.outlineColor = Color(VGFarmClientConfig.TextOutlineColor.r, VGFarmClientConfig.TextOutlineColor.g, VGFarmClientConfig.TextOutlineColor.b, 255)
+end
+
 function ENT:Initialize()
     self:SharedInitialize()
-    self:UpdateDrawWaterDelegate()
-    self.frame = math.ceil(self.DefaultWaterAmount / self.MaxWaterAmount * self.frames) - 1
-    self.WaterAmountMaterial:SetInt("$frame", self.frame)
+    self:UpdateDrawWaterDelegate(self.DefaultWaterAmount / self.MaxWaterAmount)
     self:SetPoints()
-    self.waterColor = Color(25, 150, 225)
-    self.textColor = Color(255, 255, 255, 255)
-    self.outlineColor = Color(0, 0, 0, 255)
+    self:SetColors()
 
     self:BuildPlantModels(plantModelPath)
     for i = 1, self.SeedLimit do
@@ -285,19 +284,26 @@ function ENT:PlantDraw(model)
     end
 end
 
-
 function ENT:DrawTranslucent()
     self:DrawModel()
+    
+    local playerPos = LocalPlayer():GetPos()
+    local dirtPos = self:GetPos()
+    local distSqr = playerPos:DistToSqr(dirtPos)
     local model = self:GetModel()
     
-    local ply = LocalPlayer()
-    local pos = ply:GetPos()
-    local dist = pos:Distance(self:GetPos())
-    if dist > maxDrawDistance or not modelInfoDrawPoints[model] then return end
-    
+    --Early Exit to not render info if too far away
+    if distSqr > VGFarmClientConfig.maxDrawDistanceSqr or not modelInfoDrawPoints[model] then return end
+
+    --Creates a constant horizontal view
+    local yaw = (playerPos - dirtPos):Angle().y
+    local drawAng = Angle(0, yaw + 90, 90)
+    local modelAng = self:GetAngles()
+
+    --Fade effect when getting further
     local alpha = 255
-    if dist > fadeStart then
-        local frac = Clamp((maxDrawDistance / dist) / (dist / fadeStart), 0, 1)
+    if distSqr > VGFarmClientConfig.fadeStart then
+        local frac = Clamp((VGFarmClientConfig.maxDrawDistanceSqr / distSqr) / (distSqr / VGFarmClientConfig.fadeStartSqr), 0, 1)
         alpha = alpha * frac
     end
 
@@ -305,18 +311,11 @@ function ENT:DrawTranslucent()
     self.textColor.a = alpha
     self.outlineColor.a = alpha
     
-    local drawPos = self:GetPos()
-    local toEye = EyePos() - drawPos - waterImageDrawYOffset   
-    local toEyeAngle = toEye:Angle()
-    local toEyeNormal = toEye:GetNormalized()
-    local ang = self:GetAngles()
-
     self:PlantDraw(model)
-
-    self.DrawWater(drawPos + waterImageDrawYOffset, toEyeAngle, toEyeNormal)
-
-    self:DrawGrowthInfo(drawPos + self:GetUp() * 52 , ang)
-
+    
+    self:DrawGrowthInfo(dirtPos + self:GetUp() * 52 , modelAng)
+    
+    self.DrawWater(dirtPos + waterImageDrawYOffset, drawAng)
 end
 
 function ENT:OnRemove()

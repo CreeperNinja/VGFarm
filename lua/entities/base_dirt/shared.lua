@@ -8,6 +8,17 @@ ENT.RenderGroup = RENDERGROUP_OPAQUE
 
 ENT.Model = "models/sack/sack.mdl"
 
+function ENT:UpdateDirtVisual(name, old, new)
+    if new ~= old and new > 0 then 
+        dirtFloat = new / VGFarmConfig.DefaultDirtAmount
+        self:UpdateDirt(dirtFloat, new)
+    end
+end
+
 function ENT:SetupDataTables()
     self:NetworkVar("Int", 0, "DirtAmount")
+
+    if CLIENT then
+        self:NetworkVarNotify("DirtAmount", self.UpdateDirtVisual)
+    end
 end

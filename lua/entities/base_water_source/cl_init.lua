@@ -13,7 +13,6 @@ local DrawTexture = surface.DrawTexturedRect
 local size = 32
 local xOffset = -size/2
 local yOffset = size/2
-local frame = 0
 
 local modelColor = Color(255, 255, 255)
 

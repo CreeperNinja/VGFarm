@@ -1,5 +1,6 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
+AddCSLuaFile("modules/RadialProgressBar.lua")
 include("shared.lua")
 
 AddCSLuaFile("sh_vgfarm.lua")

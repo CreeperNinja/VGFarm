@@ -13,12 +13,6 @@ ENT.Model = "models/planter_small/planter_small.mdl"
 ENT.DefaultWaterAmount = 0
 ENT.MaxWaterAmount = 180
 
---Water Amount Visuals
-ENT.frames = 100
-ENT.frame = math.ceil(ENT.DefaultWaterAmount / ENT.MaxWaterAmount * ENT.frames) - 1
-ENT.DefaultFrame = math.ceil(ENT.DefaultWaterAmount / ENT.MaxWaterAmount * ENT.frames) - 1
-ENT.WaterAmountMaterial = Material("animatedtextures/circle_256px_100frames/circle_256px_100frames")
-
 --Planter Mechanics
 ENT.SeedLimit = 1
 ENT.Seeds = {}
@@ -31,9 +25,11 @@ ENT.maxHolderDetectionRange = Vector(-30, -40, -10)
 ENT.SeedInfoPerRow = 3
 
 --Updates Water Amount Image Frame
-function ENT:UpdateFrame(name, old, new) 
-    self.frame = math.ceil(new / self.MaxWaterAmount * self.frames) - 1
-    self:UpdateDrawWaterDelegate()
+function ENT:UpdateWaterUI(name, old, new) 
+    if old ~= new then
+        local water = new / self.MaxWaterAmount
+        self:UpdateDrawWaterDelegate(water)
+    end
 end
 
 --Updates Water Amount Image Frame
@@ -60,7 +56,7 @@ function ENT:SetupDataTables()
     self:NetworkVar("Int", 1, "DirtAmount")
 
     if CLIENT then
-        self:NetworkVarNotify("WaterAmount", self.UpdateFrame)
+        self:NetworkVarNotify("WaterAmount", self.UpdateWaterUI)
         self:NetworkVarNotify("DirtAmount", self.UpdateDirtVisual)
     end
 
