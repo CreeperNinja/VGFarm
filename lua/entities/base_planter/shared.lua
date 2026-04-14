@@ -45,7 +45,7 @@ end
 --Adds Planter To Draining Cycle if eligible 
 function ENT:UpdateDraining(name, old, new) 
     if #self.Seeds > 0 and old == 0 and new > 0 then 
-        WaterDrainingEntities[self] = true 
+        self:AddToDrainingList()
         print("Added "..self:GetClass().." To Drain Update")
     end
 end

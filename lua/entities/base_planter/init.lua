@@ -51,11 +51,17 @@ function ENT:IsInDrainingList()
     return WaterDrainingEntities[self] ~= nil 
 end
 
+function ENT:TryAddToDrainingList(seedCount, waterAmount)
+    if seedCount > 0 and waterAmount > 0 then
+        self:AddToDrainingList()
+    end
+end
+
 function ENT:AddToDrainingList()
     if not self:IsInDrainingList() then
         WaterDrainingEntities[self] = true 
         WaterDrainingEntitiesCount = WaterDrainingEntitiesCount + 1
-        VGFarmUtils.SmartPrint("Added "..self:GetClass().." To Drain Update")
+        VGFarmUtils.SmartPrint("Added "..self:GetClass().." To Drain Update | Total: "..WaterDrainingEntitiesCount)
     end
 end
 
@@ -73,7 +79,7 @@ function ENT:AddSeeds(type, amount)
         lastFoundSlot = slot
     end
 
-    self:AddToDrainingList()
+    self:TryAddToDrainingList(amount, self:GetWaterAmount())
 end
 
 function ENT:RemoveSeed(index)
@@ -255,8 +261,7 @@ timer.Create("PlanterLogic_Global", VGFarmConfig.planterUpdateSpeed, 0, RunPlant
 
 function ENT:Use(activator, caller)
     if not IsValid(activator) or not activator:IsPlayer() then return end
-    local isDrainingTest = WaterDrainingEntities[self] ~= nil 
-    VGFarmUtils.SmartPrint(isDrainingTest)
+    VGFarmUtils.SmartPrint(WaterDrainingEntities[self])
 end
 
 
