@@ -23,5 +23,5 @@
 - [X] Dynamic growth visuals for each plant type
 - [X] Move all basic entity settings to the config file
 - [ ] Add Hooks to events
-- [ ] Add Icons to the entities
+- [X] Add Icons to the entities
 - [ ] Fertilizer Rework 
