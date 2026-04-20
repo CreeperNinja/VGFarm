@@ -229,9 +229,6 @@ local function DrawSeedText(pos, ang, scale, drawPoints, seeds, seedLimit, textC
                 textColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER,
                 3, outlineColor
             )
-            if toggleDrawLines then 
-                render.DrawLine(linePoints[i].bottom, linePoints[i].top, textColor, true) 
-            end
         end
     cam.End3D2D()
 end
