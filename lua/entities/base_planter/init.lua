@@ -115,11 +115,20 @@ local function RemoveFromDraining(planter)
     WaterDrainingEntitiesCount = WaterDrainingEntitiesCount - 1
 end
 
+hook.Add("VGFarm_CropsSpawned", "Example", function(planter, cropHashMap, cropHolderEntity)
+    print(planter:GetName().. " Has Grown Crops And Placed It In "..cropHolderEntity:GetName())
+    for cropName, cropAmount in pairs(cropHashMap) do
+        print(cropName..": "..cropAmount)
+    end
+end)
+
 function ENT:SpawnCrops(cropHashMap)
     local cropHolderEntity = VGFarmUtils.GetNearbyEntityInBox(self:GetPos() + self:GetForward() * 50, self.minHolderDetectionRange, self.maxHolderDetectionRange, "base_cropholder")
     if cropHolderEntity == nil then cropHolderEntity = self:SpawnEmpyCropHolder() end
     cropHolderEntity:AddCrops(cropHashMap)
     self:EmitSound("Plant.Grown")
+    -- passes the planter that spawned the crops, the crops hashmap, and the entity that spawned
+    hook.Run("VGFarm_CropsSpawned", self, cropHashMap, cropHolderEntity)
 
 end
 
@@ -187,7 +196,10 @@ function ENT:GrowSeeds(planterSeedsToUpdate)
         self:SetDirtAmount(newDirtAmount)
     end
 
-    if cropsToSpawnCount > 0 then self:SpawnCrops(cropsToSpawn) end
+    if cropsToSpawnCount > 0 then 
+        self:SpawnCrops(cropsToSpawn) 
+        
+    end
 
     if seedCount > 0 then return end
 
@@ -213,7 +225,6 @@ local function SendSeedGrowthProgressToClient(planterSeedsToUpdate)
 
     for planter, seeds in pairs(planterSeedsToUpdate.content) do
         net.WriteEntity(planter)
-        VGFarmUtils.SmartPrint("Used Slots: "..#planterSeedsToUpdate.content[planter])
         VGFarmUtils.SmartNetUIntWrite(#planterSeedsToUpdate.content[planter])
         PrintTable(planterSeedsToUpdate.content[planter])
         for key, seed in pairs(seeds) do
@@ -263,5 +274,3 @@ function ENT:Use(activator, caller)
     if not IsValid(activator) or not activator:IsPlayer() then return end
     VGFarmUtils.SmartPrint(WaterDrainingEntities[self])
 end
-
-

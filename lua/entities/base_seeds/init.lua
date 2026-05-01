@@ -78,12 +78,11 @@ function ENT:TouchedPlanter(ent)
 
     local seedAmount = self:GetSeedAmount()
     local newSeedAmount = seedAmount - validSpace
-
-    ent:EmitSound("Seed.Used")
     
     if newSeedAmount <= 0 then 
         ent:AddSeeds(self:GetClass(), seedAmount)
         VGFarmUtils.SmartPrint("Removed Seed Pack")
+        ent:EmitSound("Seed.Used")
         self:Remove()
         return
     end
@@ -91,6 +90,7 @@ function ENT:TouchedPlanter(ent)
     if validSpace > 0 then
         ent:AddSeeds(self:GetClass(), availableSpace)
         self:SetSeedAmount(newSeedAmount)
+        ent:EmitSound("Seed.Used")
     end
 end
 

@@ -56,7 +56,13 @@ end
 
 function ENT:Use(activator, caller)
     if not IsValid(activator) or not activator:IsPlayer() then return end
+
+    local allowed = hook.Run("VGFarm_CanCollectCrops", activator, self, self.Crops)
+    if allowed == false then return end
+
     SVGFarm:AddCropsToPlayerInventory(activator, self.Crops)
+
+    hook.Run("VGFarm_CollectedCrops", activator, self, self.Crops)
     self:EmitSound("Bag.Used")
     self:Remove()
 end

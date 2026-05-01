@@ -43,10 +43,16 @@ local function ReplaceOldValue(marketData, value)
     
 end
 
-local function ReplaceEachOldMarketDataValue(initialMin, initialMax)
+local function ReplaceEachOldMarketDataValue()
+    local statIndex = 0
+    local newMarketStatTable = {}
     for marketName, marketData in pairs(markets) do
-        ReplaceOldValue(marketData, VGFarm.CreateNewCropValue(marketName, marketData[eachMarketSize]))
+        statIndex = statIndex + 1
+        local newValue = VGFarm.CreateNewCropValue(marketName, marketData[eachMarketSize])
+        ReplaceOldValue(marketData, newValue)
+        newMarketStatTable[marketName] = newValue
     end
+    return newMarketStatTable
 end
 
 function SendAllMarketData(ply)
@@ -87,7 +93,7 @@ local function SetInitialPlayerInventory(ply)
 
         -- Send(ply)
         print("[Warning] Currently Not Actually Uses DB values to send data, sends 0's to all types")
-        return -- Avoids running default setup below
+        -- return -- Avoids running default setup below
     end
 
     //Sets each crop amount in inventory to 0
@@ -135,21 +141,28 @@ local function ResetPlayerInventory(ply)
 end
 
 function SVGFarm:SellAllCrops(ply)
-    local earnings = 0
+    local totalEarnings = 0
     local Inventory = PlayerInventories[ply]
+    local sellStats = {}
 
-    for key, value in pairs(Inventory) do
-        if value == 0 then continue end
-        earnings = earnings + value * markets[key][eachMarketSize]
-        Inventory[key] = 0
+    for cropName, cropAmount in pairs(Inventory) do
+        if cropAmount == 0 then continue end
+        local marketPrice = markets[cropName][eachMarketSize]
+        local cropEarning = cropAmount * marketPrice
+        totalEarnings = totalEarnings + cropEarning
+        sellStats[cropName] = {amount = cropAmount, price = marketPrice, earning = cropEarning}
+        Inventory[cropName] = 0
     end
 
-    if earnings == 0 then print("Nothing To Sell") return end
-    ply:ChatPrint("Sold All Inventory ($"..earnings..")")
-    VGFarm.AddMoney(ply, earnings)
+    if totalEarnings == 0 then ply:ChatPrint("No Crops To Sell") return end
+    ply:ChatPrint("Sold All Inventory ($"..totalEarnings..")")
+    VGFarm.AddMoney(ply, totalEarnings)
     ResetPlayerInventory(ply)
 
-    return earnings
+    -- passes parameters when a player sells all crops in the market
+    hook.Run("VGFarm_SoldAllCrops", ply, sellStats, totalEarnings)
+
+    return totalEarnings
 end
 
 --Sends an crop to set its value to 0
@@ -162,15 +175,20 @@ end
 function SVGFarm:SellCrop(ply, cropName)
     local Inventory = PlayerInventories[ply]
 
-    if Inventory[cropName] == 0 then VGFarmUtils.SmartPrint("No "..cropName.." To Sell") return end
+    local cropAmount = Inventory[cropName]
 
-    local earnings = Inventory[cropName] * markets[cropName][eachMarketSize]
+    if cropAmount == 0 then VGFarmUtils.SmartPrint("No "..cropName.." To Sell") return end
 
-    ply:ChatPrint("You sold " .. Inventory[cropName] .. "x " .. cropName .. " for $" .. earnings .. " ("..markets[cropName][eachMarketSize].."$ each)")
-    VGFarm.AddMoney(ply, earnings)
+    local marketPrice = markets[cropName][eachMarketSize]
+
+    local totalEarnings = cropAmount * marketPrice
+
+    ply:ChatPrint("You sold "..cropAmount.."x ".. cropName.." for $"..totalEarnings.." ("..marketPrice.."$ each)")
+    VGFarm.AddMoney(ply, totalEarnings)
     PlayerInventories[ply][cropName] = 0
 
     ResetCropInPlayerInventory(ply, cropName)
+    hook.Run("VGFarm_SoldCrop", ply, cropName, cropAmount, marketPrice, totalEarnings)
 end
 
 
@@ -190,15 +208,15 @@ end)
 
 -- Hooks
 -- Sets Up Info When Player First Spawns In
-hook.Add("PlayerInitialSpawn", "SetPlayerData", function(ply)
+hook.Add("PlayerInitialSpawn", "VGFarm_SetPlayerData", function(ply)
     SetInitialPlayerInventory(ply)
     SendAllMarketData(ply)
 end)
 
 //Removes Player Data
-hook.Add("PlayerDisconnected", "CleanupPositionCache", function(ply)
+hook.Add("PlayerDisconnected", "VGFarm_CleanupPositionCache", function(ply)
     PlayerInventories[ply] = nil  -- Remove inventory data
-    print(ply:Name().. " has left the server. \r\nData Removed")
+    print(ply:Name().. " has left the server. \nData Removed")
 end)
 
 -- Timers
@@ -209,11 +227,34 @@ local function UpdateMarket()
         timer.Adjust("UpdateMarketData", marketUpdateFrequency, 0, UpdateMarket)
         return 
     end
-    ReplaceEachOldMarketDataValue(1, 100)    
+    local newMarketValuesTable = ReplaceEachOldMarketDataValue()    
     SendNewMarketValuesToAll()
+    hook.Run("VGFarm_MarketUpdated", newMarketValuesTable)
+
 end
 
 -- Update Market Values
 timer.Create("UpdateMarketData", VGFarmConfig.marketUpdateFrequency, 0, UpdateMarket)
+
+hook.Add("VGFarm_SoldAllCrops", "Example", function(ply, sellStatsTable, totalEarnings)
+    print(ply:Nick().." Sold Crops for a total of "..totalEarnings..":\n")
+    for cropName, sellStat in pairs(sellStatsTable) do
+        print(cropName..": "..sellStat.amount.." | price: "..sellStat.price.." | earning: "..sellStat.earning)
+    end
+end)
+
+concommand.Add("vgfarm_debug_add_crops", function(ply, cmd, args)
+    local amount = tonumber(args[1])
+
+    if not amount then
+        print("Invalid number")
+        return
+    end
+
+    local Inventory = PlayerInventories[ply]
+    for cropName, cropAmount in pairs(Inventory) do
+        PlayerInventories[ply][cropName] = cropAmount + amount
+    end
+end)
 
 return SVGFarm
