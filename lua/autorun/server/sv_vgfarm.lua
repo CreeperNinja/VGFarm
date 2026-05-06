@@ -102,13 +102,16 @@ local function SetInitialPlayerInventory(ply)
     end
 end
 
--- Currently not in use
-function SVGFarm:AddCropToPlayerInventory(ply, cropName, amount)
+function SVGFarm:ModifyPlayerInventory(ply, cropName, amount, toggledAdditonMode)
     if not IsValid(ply) or PlayerInventories[ply][cropName] == nil then print("Invalid Player Or Crop, Cannot Add To Inventory") return end
 
-    PlayerInventories[ply][cropName] = PlayerInventories[ply][cropName] + amount
+    if toggledAdditonMode then
+        PlayerInventories[ply][cropName] = math.max(0, PlayerInventories[ply][cropName] + amount)
+        else
+        PlayerInventories[ply][cropName] = math.max(0, amount)
+    end
     local cropAmount = PlayerInventories[ply][cropName]
-    print("Added To Inventory Now Player Has "..PlayerInventories[ply][cropName].." "..cropName)
+    print(ply:Nick().." Now Has "..cropAmount.." "..cropName)
 
     NetStart("SendPlayerInventoryCrop")
     VGFarm.SmartNetCropWrite(cropName)
@@ -117,7 +120,6 @@ function SVGFarm:AddCropToPlayerInventory(ply, cropName, amount)
     Send(ply)
 end
 
--- Currently used instead of its singular version avove
 function SVGFarm:AddCropsToPlayerInventory(ply, cropsHashMap)
     NetStart("SendPlayerInventoryCrops")
     WriteUInt(table.Count(cropsHashMap), VGFarm.CropBitEncoder)
@@ -203,6 +205,7 @@ net.Receive("RequestSellCrop", function(len, ply)
 end)
 
 net.Receive("RequestSellAllCrops", function(len, ply)
+    print(ply)
     SVGFarm:SellAllCrops(ply)
 end)
 
@@ -236,25 +239,93 @@ end
 -- Update Market Values
 timer.Create("UpdateMarketData", VGFarmConfig.marketUpdateFrequency, 0, UpdateMarket)
 
-hook.Add("VGFarm_SoldAllCrops", "Example", function(ply, sellStatsTable, totalEarnings)
-    print(ply:Nick().." Sold Crops for a total of "..totalEarnings..":\n")
-    for cropName, sellStat in pairs(sellStatsTable) do
-        print(cropName..": "..sellStat.amount.." | price: "..sellStat.price.." | earning: "..sellStat.earning)
-    end
-end)
-
-concommand.Add("vgfarm_debug_add_crops", function(ply, cmd, args)
-    local amount = tonumber(args[1])
-
-    if not amount then
-        print("Invalid number")
+-- Admin Commands
+local function ManageCrop(ply, cmd, args)
+    if IsValid(ply) and not ply:IsAdmin() then
+        ply:ChatPrint("You must be an admin to use this command.")
         return
     end
 
-    local Inventory = PlayerInventories[ply]
-    for cropName, cropAmount in pairs(Inventory) do
-        PlayerInventories[ply][cropName] = cropAmount + amount
+    local mode = args[1]
+    local targetPlayer, reason = VGFarmUtils.ResolvePlayer(args[2], ply)
+    local crop = args[3]
+    local amount = tonumber(args[4]) or 1
+
+    if not mode then
+        print("Usage: vgfarm_crop <add/set> <\"player name\"/\"steamID\"/steamID64> <crop> <amount>")
+        return
     end
-end)
+
+    if mode ~= "add" and mode ~= "set" then
+        print("Invalid mode. Use 'add' or 'set'")
+        print("Usage: vgfarm_crop <add/set> <\"player name\"/\"steamID\"/steamID64> <crop> <amount>")
+        return
+    end
+
+    if not targetPlayer then
+        print(reason)
+        print("Usage: vgfarm_crop <add/set> <\"player name\"/\"steamID\"/steamID64> <crop> <amount>")
+        return
+    end
+
+    if not crop then
+        print("Invalid crop")
+        print("Usage: vgfarm_crop <add/set> <\"player name\"/\"steamID\"/steamID64> <crop> <amount>")
+        return
+    end
+
+    if mode == "add" then
+        SVGFarm:ModifyPlayerInventory(targetPlayer, crop, amount, true)
+    else 
+        SVGFarm:ModifyPlayerInventory(targetPlayer, crop, amount, false)
+    end
+end
+
+local function ManageCropAutoComplete(cmd, stringargs)
+    local args = VGFarmUtils.GetConsoleCommandArgs(stringargs)
+    local results = {}
+
+    local mode = args[1] or ""
+    local playerName = args[2] or ""
+    local cropName = args[3] or ""
+
+    -- Mode
+    if #args == 1 then
+        local modes = {"add", "set"}
+
+        for _, m in ipairs(modes) do
+            local lower = string.lower(m)
+            if mode == "" or string.StartWith(lower, string.lower(mode)) then
+                table.insert(results, "vgfarm_crop " .. m)
+            end
+        end
+
+    -- Player
+    elseif #args == 2 then
+        for _, v in ipairs(player.GetAll()) do
+            local plyName = v:Nick()
+            local lowerName = string.lower(plyName)
+            local lowerNameQuoted = "\""..lowerName.."\""
+
+            if playerName == "" or string.find(lowerName, string.lower(playerName), 1, true) or string.find(lowerNameQuoted, string.lower(playerName), 1, true) then
+                table.insert(results, "vgfarm_crop " .. mode .. " \"" .. plyName.."\"")
+            end
+        end
+
+    -- Crop
+    elseif #args == 3 then
+        for _, crop in ipairs(VGFarmConfig.Crops) do
+            local name = crop.name
+            local lower = string.lower(name)
+            if cropName == "" or string.StartWith(lower, string.lower(cropName)) then
+                table.insert(results,"vgfarm_crop " .. mode .. " " .. playerName .. " " .. name)
+            end
+        end
+    end
+
+    return results
+end
+
+concommand.Add("vgfarm_crop", ManageCrop , ManageCropAutoComplete)
 
 return SVGFarm

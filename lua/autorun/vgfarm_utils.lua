@@ -145,4 +145,92 @@ function VGFarmUtils.TableSafeCreate(tbl, key, value, optionalCounter)
     return optionalCounter
 end
 
+function VGFarmUtils.ResolvePlayer(input, caller)
+    if not input then return nil, "no player identifier" end
+
+    if input == "@me" then 
+        if IsValid(caller) then return caller, "self target" end
+        return nil, "self target not a valid player"
+    end
+
+    input = string.Trim(input)
+    local playerList = player.GetAll()
+
+    -- 1. Exact SteamID
+    if string.StartsWith(input, "STEAM_") then
+        for _, v in ipairs(playerList) do
+            if v:SteamID() == input then
+                return v
+            end
+        end
+        return nil, "no steamid match"
+    end
+    
+    -- 2. SteamID64
+    if tonumber(input) then
+        for _, v in ipairs(playerList) do
+            if v:SteamID64() == input then
+                return v
+            end
+        end
+        return nil, "no steamid64 match"
+    end
+
+    local matches = {}
+    -- 3. Exact name match
+    for _, v in ipairs(playerList) do
+        if v:Nick() == input then
+            table.insert(matches, v)
+        end
+    end
+
+    if #matches == 1 then
+        return matches[1]
+    elseif #matches > 1 then
+        return nil, "multiple matches", matches
+    end
+
+    return nil, "no match"
+end
+
+function VGFarmUtils.GetConsoleCommandArgs(rawStringArgs)
+    local stringArgs = rawStringArgs
+    local args = {}
+    local current = ""
+    local inQuotes = false
+
+    -- Handles the first character
+    if rawStringArgs:StartsWith(" ") then
+        stringArgs = rawStringArgs:sub(2)
+    end
+
+    for  i = 1, #stringArgs do
+        local char = stringArgs:sub(i,i)
+
+        -- disables space seperation if double quotes is present
+        if char == "\"" then 
+            inQuotes = not inQuotes
+        end
+        
+        -- adds character to the string arg
+        if char ~= " " then
+            current = current .. char
+
+        else
+            -- adds an arg to the results if spaces are not allowed 
+            if not inQuotes then
+                table.insert(args, current)
+                current = ""
+                
+            else
+                current = current .. char
+            end
+        end
+    end
+
+    table.insert(args, current)
+
+    return args
+end
+
 return VGFarmUtils
