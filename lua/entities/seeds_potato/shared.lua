@@ -16,6 +16,6 @@ ENT.DefaultSeedAmount = 6 -- default amount
 
 --Seeds
 ENT.GrowTime = 300
-ENT.CropClassName = "Potatos"
+ENT.CropClassName = "Pumpkin"
 ENT.CropAmount = 1
 ENT.CropMaxAmount = 3

@@ -16,6 +16,6 @@ ENT.DefaultSeedAmount = 5 -- default amount
 
 --Seeds
 ENT.GrowTime = 480
-ENT.CropClassName = "Onions"
+ENT.CropClassName = "Onion"
 ENT.CropAmount = 1
 ENT.CropMaxAmount = 2

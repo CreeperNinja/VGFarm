@@ -16,6 +16,6 @@ ENT.DefaultSeedAmount = 5 -- default amount
 
 --Seeds
 ENT.GrowTime = 600
-ENT.CropClassName = "Watermelons"
+ENT.CropClassName = "Watermelon"
 ENT.CropAmount = 1
 ENT.CropMaxAmount = 2

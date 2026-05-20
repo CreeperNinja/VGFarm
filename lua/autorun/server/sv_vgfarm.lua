@@ -30,7 +30,6 @@ util.AddNetworkString("ResetPlayerInventory")
 util.AddNetworkString("ResetCropInPlayerInventory")
 util.AddNetworkString("SendPlayerInventoryCrop")
 util.AddNetworkString("SendPlayerInventoryCrops")
-util.AddNetworkString("SendPlayerData")
 util.AddNetworkString("SendMarketData")
 util.AddNetworkString("SendNewMarketDataValues")
 
@@ -80,24 +79,9 @@ end
 -- Player Functions
 local function SetInitialPlayerInventory(ply)
     PlayerInventories[ply] = {} -- Start with an empty table
-    
-    //Sends Data To Client if True
-    if VGFarm.LoadPlayerInventoryFromDatabase then
-        -- net.Start("SendPlayerData")
-        -- WriteUInt(#VGFarm.Crops, 4)
-
-        -- for key, crop in ipairs(VGFarm.Crops) do
-        --     PlayerInventories[ply][crop.name] = 0
-        --     WriteUInt(VGFarm.CropsIDs[crop.name], 4)
-        -- end
-
-        -- Send(ply)
-        print("[Warning] Currently Not Actually Uses DB values to send data, sends 0's to all types")
-        -- return -- Avoids running default setup below
-    end
 
     //Sets each crop amount in inventory to 0
-    for key, crop in ipairs(VGFarm.Crops) do
+    for key, crop in ipairs(VGFarmConfig.Crops) do
         PlayerInventories[ply][crop.name] = 0
     end
 end

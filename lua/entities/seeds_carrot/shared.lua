@@ -16,6 +16,6 @@ ENT.DefaultSeedAmount = 7 -- default amount
 
 --Seed
 ENT.GrowTime = 220
-ENT.CropClassName = "Carrots"
+ENT.CropClassName = "Carrot"
 ENT.CropAmount = 1
 ENT.CropMaxAmount = 4

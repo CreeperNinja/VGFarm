@@ -30,16 +30,16 @@ VGFarmConfig.eachMarketSize = 20 --Min 2 Required --> 1 is always used to make a
 
 VGFarmConfig.Crops = --(Requires Server Restart)
 {
-    { name = "Carrots",         baseMarketPrice = 1},
-    { name = "Potatos",         baseMarketPrice = 2},
-    { name = "Cucumbers",       baseMarketPrice = 3},
-    { name = "Tomatoes",        baseMarketPrice = 4},
-    { name = "Lettuce",         baseMarketPrice = 5},
-    { name = "Onions",          baseMarketPrice = 6},
-    { name = "Strawberries",    baseMarketPrice = 7},
-    { name = "Eggplants",       baseMarketPrice = 8},
-    { name = "Pumpkins",        baseMarketPrice = 9},
-    { name = "Watermelons",     baseMarketPrice = 10},
+    { name = "Carrot",         baseMarketPrice = 1},
+    { name = "Potato",         baseMarketPrice = 2},
+    { name = "Cucumber",       baseMarketPrice = 3},
+    { name = "Tomato",         baseMarketPrice = 4},
+    { name = "Lettuce",        baseMarketPrice = 5},
+    { name = "Onion",          baseMarketPrice = 6},
+    { name = "Strawberry",     baseMarketPrice = 7},
+    { name = "Eggplant",       baseMarketPrice = 8},
+    { name = "Pumpkin",        baseMarketPrice = 9},
+    { name = "Watermelon",     baseMarketPrice = 10},
 }
 
 --Inventory

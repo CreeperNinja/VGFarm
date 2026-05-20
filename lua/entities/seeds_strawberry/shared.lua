@@ -16,6 +16,6 @@ ENT.DefaultSeedAmount = 5 -- default amount
 
 --Seeds
 ENT.GrowTime = 520
-ENT.CropClassName = "Strawberries"
+ENT.CropClassName = "Strawberry"
 ENT.CropAmount = 1
 ENT.CropMaxAmount = 2

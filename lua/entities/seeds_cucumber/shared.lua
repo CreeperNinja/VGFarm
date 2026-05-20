@@ -16,6 +16,6 @@ ENT.DefaultSeedAmount = 5 -- default amount
 
 --Seeds
 ENT.GrowTime = 300
-ENT.CropClassName = "Cucumbers"
+ENT.CropClassName = "Cucumber"
 ENT.CropAmount = 1
 ENT.CropMaxAmount = 2

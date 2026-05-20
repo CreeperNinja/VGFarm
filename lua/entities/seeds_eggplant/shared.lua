@@ -16,6 +16,6 @@ ENT.DefaultSeedAmount = 5 -- default amount
 
 --Seeds
 ENT.GrowTime = 580
-ENT.CropClassName = "Eggplants"
+ENT.CropClassName = "Eggplant"
 ENT.CropAmount = 1
 ENT.CropMaxAmount = 2

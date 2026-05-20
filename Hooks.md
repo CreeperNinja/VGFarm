@@ -12,7 +12,7 @@ Returning a value will stop other hooks from running.
 
 `Entity planter` = planter that grew the crops
 
-`table cropsTable` = formatted as the name of the crop in plural as index and an int amount as the key | when a potato finishes growing it will be `["Potatoes"] = 1`
+`table cropsTable` = formatted as the name of the crop as index and an int amount as the key | when a potato finishes growing it will be `["Potato"] = 1`
 
 `Entity cropHolder` = the entity that holds the crop list values in it to be collected by the player
 

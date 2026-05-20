@@ -6,21 +6,12 @@ VGFarmPlayer = VGFarmPlayer or {}
 VGFarmPlayer.Inventory = {}
 
 //Sets each crop amount in inventory to 0
-for key, crop in ipairs(VGFarm.Crops) do
+for key, crop in ipairs(VGFarmConfig.Crops) do
     VGFarmPlayer.Inventory[crop.name] = 0
 end
 
 function VGFarmPlayer:GetPlayerFarmInventory()
     return self.Inventory
-end
-
-local function SetPlayerData()
-    -- local count = net.ReadUInt(4)
-
-    -- for i = 1, count do
-    --     local cropName = VGFarm.CropTypes[net.ReadUInt(4)]
-    --     VGFarmPlayer.Inventory[cropName] = 0
-    -- end
 end
 
 local function ResetInventory()
@@ -35,7 +26,7 @@ local function ResetCropInInventory()
 end
 
 local function SetCropAmount()
-    local cropName = VGFarm.Crops[net.ReadUInt(VGFarm.CropBitEncoder)].name
+    local cropName = VGFarmConfig.Crops[net.ReadUInt(VGFarm.CropBitEncoder)].name
     local smartBit = VGFarmUtils.SmartNetBitRead()
     local cropAmount = net.ReadUInt(smartBit)
     VGFarmPlayer.Inventory[cropName] = cropAmount
@@ -57,8 +48,6 @@ net.Receive("ResetCropInPlayerInventory", ResetCropInInventory)
 net.Receive("SendPlayerInventoryCrop", SetCropAmount)
 
 net.Receive("SendPlayerInventoryCrops", SetCrops)
-
-net.Receive("SendPlayerData", SetPlayerData)
 
 function VGFarmPlayer:SendSellCropRequest(cropName)
     net.Start("RequestSellCrop")
